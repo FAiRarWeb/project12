@@ -627,19 +627,30 @@
       allTargets.forEach(id => {
         const target = document.getElementById(id);
         target.addEventListener("targetFound", () => {
+          console.log(`Target ${id} found - starting video playback`);
           currentTarget = id;
+
           if (!isInfoShown) {
+            // Reset video to beginning for fresh playback
+            video.currentTime = 0;
             // Unmute and play video with sound
             video.muted = false;
             video.volume = 1.0; // Set volume to maximum
+
+            // Ensure video plays from the start
             video.play().catch(e => {
               console.log("Video play failed:", e);
               // If autoplay with sound fails, try muted first then unmute
               video.muted = true;
               video.play().then(() => {
                 video.muted = false;
+              }).catch(err => {
+                console.log("Fallback video play also failed:", err);
               });
             });
+
+            // Show the corresponding a-video element
+            document.querySelector(`#${id} a-video`).setAttribute("visible", true);
             document.querySelector(`#${id} .target-text`).setAttribute("opacity", "0");
           } else {
             document.querySelector(`#${id} .target-text`).setAttribute("opacity", "1");
@@ -647,9 +658,17 @@
         });
 
         target.addEventListener("targetLost", () => {
+          console.log(`Target ${id} lost - pausing video`);
           currentTarget = null;
+
+          // Pause and mute video immediately when target is lost
           video.pause();
-          video.muted = true; // Mute when target is lost
+          video.muted = true;
+
+          // Hide all a-video elements
+          document.querySelectorAll("a-video").forEach(v => v.setAttribute("visible", false));
+
+          // Hide website link and texts
           websiteLink.style.display = "none";
           hideAllTexts();
         });
