@@ -438,16 +438,15 @@
 
     <video
       id="ar-video"
-      src="https://fairarweb.github.io/project/WhatsApp%20Video%202025-05-20%20at%2010.08.10_53f8c34b.mp4"
+      src="https://fairarweb.github.io/project12/videotest.mp4"
       loop
       autoplay
-      muted
       playsinline
       style="display: none"
     ></video>
 
     <a-scene
-      mindar-image="imageTargetSrc: https://FAiRarWeb.github.io/project/targets.mind;
+      mindar-image="imageTargetSrc: https://FAiRarWeb.github.io/project12/targets.mind;
                     uiScanning: no;
                     filterMinCF: 0.0001;
                     filterBeta: 0.001;
@@ -469,7 +468,7 @@
         <a-entity class="video-container" position="0 0 0">
           <a-video
             id="video-plane"
-            src="https://fairarweb.github.io/project/WhatsApp%20Video%202025-05-20%20at%2010.08.10_53f8c34b.mp4"
+            src="https://fairarweb.github.io/project12/videotest.mp4"
             position="0 0 0"
             width="1"
             height="0.45"
@@ -493,7 +492,7 @@
         </a-entity>
         <a-entity class="video-container" position="0 0 0">
           <a-video
-            src="https://fairarweb.github.io/project/WhatsApp%20Video%202025-05-20%20at%2010.08.10_53f8c34b.mp4"
+            src="https://fairarweb.github.io/project12/videotest.mp4"
             position="0 0.05 0"
             width="1"
             height="0.45"
@@ -600,13 +599,24 @@
 
         if (isInfoShown) {
           video.pause();
+          video.muted = true; // Mute when showing info
           document.querySelectorAll("a-video").forEach(v => v.setAttribute("visible", false));
           websiteLink.href = "https://www.youtube.com/";
           websiteLink.textContent = "Visit YouTube";
           websiteLink.style.display = "block";
           document.querySelector(`#${currentTarget} .target-text`).setAttribute("opacity", "1");
         } else {
-          video.play();
+          // Unmute and play video with sound when returning to video mode
+          video.muted = false;
+          video.volume = 1.0;
+          video.play().catch(e => {
+            console.log("Video play failed:", e);
+            // If autoplay with sound fails, try muted first then unmute
+            video.muted = true;
+            video.play().then(() => {
+              video.muted = false;
+            });
+          });
           document.querySelectorAll("a-video").forEach(v => v.setAttribute("visible", true));
           websiteLink.style.display = "none";
           hideAllTexts();
@@ -619,7 +629,17 @@
         target.addEventListener("targetFound", () => {
           currentTarget = id;
           if (!isInfoShown) {
-            video.play();
+            // Unmute and play video with sound
+            video.muted = false;
+            video.volume = 1.0; // Set volume to maximum
+            video.play().catch(e => {
+              console.log("Video play failed:", e);
+              // If autoplay with sound fails, try muted first then unmute
+              video.muted = true;
+              video.play().then(() => {
+                video.muted = false;
+              });
+            });
             document.querySelector(`#${id} .target-text`).setAttribute("opacity", "0");
           } else {
             document.querySelector(`#${id} .target-text`).setAttribute("opacity", "1");
@@ -629,6 +649,7 @@
         target.addEventListener("targetLost", () => {
           currentTarget = null;
           video.pause();
+          video.muted = true; // Mute when target is lost
           websiteLink.style.display = "none";
           hideAllTexts();
         });
