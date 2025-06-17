@@ -441,8 +441,7 @@
       src="https://fairarweb.github.io/project12/videotest.mp4"
       muted
       playsinline
-      preload="metadata"
-      crossorigin="anonymous"
+      preload="auto"
       style="display: none"
     ></video>
 
@@ -452,22 +451,12 @@
                     filterMinCF: 0.0001;
                     filterBeta: 0.001;
                     missTolerance: 5;
-                    warmupTolerance: 3;
-                    maxTrack: 2;
-                    showStats: false;"
+                    warmupTolerance: 3;"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
-      renderer="precision: high;
-                antialias: true;
-                alpha: true;
-                powerPreference: high-performance;
-                colorManagement: true;
-                sortObjects: true;
-                physicallyCorrectLights: false;"
+      renderer="precision: high; antialias: true;"
       style="display: none;"
       id="ar-scene"
-      stats="false"
-      inspector="url: false"
     >
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
@@ -596,23 +585,6 @@
       document.addEventListener("DOMContentLoaded", () => {
         // Start checking for AR readiness
         checkARReady();
-
-        // Add video event listeners for debugging
-        video.addEventListener('loadeddata', () => {
-          console.log('Video loaded and ready to play');
-        });
-
-        video.addEventListener('timeupdate', () => {
-          // Only log occasionally to avoid spam
-          if (Math.floor(video.currentTime) % 5 === 0 && video.currentTime % 1 < 0.1) {
-            console.log(`Video time: ${video.currentTime.toFixed(2)}s`);
-          }
-        });
-
-        video.addEventListener('ended', () => {
-          console.log('Video ended');
-          isVideoPlaying = false;
-        });
       });
 
       function hideAllTexts() {
@@ -717,31 +689,10 @@
 
       async function initializeCamera() {
         try {
-          // Set high-resolution camera constraints for better AR tracking
-          const constraints = {
-            video: {
-              facingMode: "environment",
-              width: { ideal: 1920, min: 1280 },
-              height: { ideal: 1080, min: 720 },
-              frameRate: { ideal: 30, min: 15 }
-            }
-          };
-
-          // Request camera access with high resolution
-          const stream = await navigator.mediaDevices.getUserMedia(constraints);
-          console.log("High-resolution AR camera initialized");
-          console.log(`Camera resolution: ${stream.getVideoTracks()[0].getSettings().width}x${stream.getVideoTracks()[0].getSettings().height}`);
+          // Camera initialization is handled by MindAR
+          console.log("AR camera initialized");
         } catch (err) {
-          console.warn("High-resolution camera access failed, trying fallback:", err);
-          try {
-            // Fallback to lower resolution if high-res fails
-            const fallbackStream = await navigator.mediaDevices.getUserMedia({
-              video: { facingMode: "environment" }
-            });
-            console.log("Fallback camera initialized");
-          } catch (fallbackErr) {
-            console.error("Camera access completely failed:", fallbackErr);
-          }
+          console.warn("Camera access failed:", err);
         }
       }
     </script>
