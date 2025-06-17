@@ -449,15 +449,15 @@
     <a-scene
       mindar-image="imageTargetSrc: https://FAiRarWeb.github.io/project12/targets.mind;
                     uiScanning: no;
-                    filterMinCF: 0.001;
-                    filterBeta: 0.01;
-                    missTolerance: 3;
-                    warmupTolerance: 2;
+                    filterMinCF: 0.01;
+                    filterBeta: 0.1;
+                    missTolerance: 2;
+                    warmupTolerance: 1;
                     maxTrack: 1;
                     showStats: false;"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
-      renderer="precision: mediump;
+      renderer="precision: lowp;
                 antialias: false;
                 alpha: false;
                 powerPreference: high-performance;
@@ -599,7 +599,7 @@
         // Start checking for AR readiness
         checkARReady();
 
-        // Add optimized video event listeners
+        // Minimal video event listeners for maximum performance
         video.addEventListener('loadeddata', () => {
           console.log('Video loaded and ready to play');
         });
@@ -609,11 +609,11 @@
           isVideoPlaying = false;
         });
 
-        // Minimal time update for performance
+        // Extremely minimal time update for performance
         let lastLogTime = 0;
         video.addEventListener('timeupdate', () => {
           const currentTime = Math.floor(video.currentTime);
-          if (currentTime !== lastLogTime && currentTime % 30 === 0) {
+          if (currentTime !== lastLogTime && currentTime % 60 === 0) {
             console.log(`Video time: ${video.currentTime.toFixed(2)}s`);
             lastLogTime = currentTime;
           }
@@ -738,33 +738,34 @@
 
       async function initializeCamera() {
         try {
-          // Optimized camera constraints for better performance
+          // High FPS optimized camera constraints - prioritizing performance over quality
           const constraints = {
             video: {
               facingMode: "environment",
-              width: { ideal: 1280, min: 640 },
-              height: { ideal: 720, min: 480 },
-              frameRate: { ideal: 30, min: 20 }
+              width: { ideal: 640, min: 480 },
+              height: { ideal: 480, min: 360 },
+              frameRate: { ideal: 60, min: 30 }
             }
           };
 
-          // Request camera access with optimized resolution
+          // Request camera access with high FPS, lower resolution
           const stream = await navigator.mediaDevices.getUserMedia(constraints);
-          console.log("Optimized AR camera initialized");
+          console.log("High FPS AR camera initialized");
           console.log(`Camera resolution: ${stream.getVideoTracks()[0].getSettings().width}x${stream.getVideoTracks()[0].getSettings().height}`);
           console.log(`Camera FPS: ${stream.getVideoTracks()[0].getSettings().frameRate}`);
         } catch (err) {
-          console.warn("Optimized camera access failed, trying fallback:", err);
+          console.warn("High FPS camera access failed, trying fallback:", err);
           try {
-            // Fallback to basic resolution for maximum compatibility
+            // Ultra-low resolution fallback for maximum FPS
             const fallbackStream = await navigator.mediaDevices.getUserMedia({
               video: {
                 facingMode: "environment",
-                width: { ideal: 640 },
-                height: { ideal: 480 }
+                width: { ideal: 480 },
+                height: { ideal: 360 },
+                frameRate: { ideal: 30 }
               }
             });
-            console.log("Fallback camera initialized");
+            console.log("Ultra-low resolution fallback camera initialized");
           } catch (fallbackErr) {
             console.error("Camera access completely failed:", fallbackErr);
           }
