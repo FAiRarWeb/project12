@@ -449,27 +449,25 @@
     <a-scene
       mindar-image="imageTargetSrc: https://FAiRarWeb.github.io/project12/targets.mind;
                     uiScanning: no;
-                    filterMinCF: 0.01;
-                    filterBeta: 0.1;
-                    missTolerance: 2;
-                    warmupTolerance: 1;
-                    maxTrack: 1;
+                    filterMinCF: 0.0001;
+                    filterBeta: 0.001;
+                    missTolerance: 5;
+                    warmupTolerance: 3;
+                    maxTrack: 2;
                     showStats: false;"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
-      renderer="precision: lowp;
-                antialias: false;
-                alpha: false;
+      renderer="precision: high;
+                antialias: true;
+                alpha: true;
                 powerPreference: high-performance;
-                colorManagement: false;
-                sortObjects: false;
-                physicallyCorrectLights: false;
-                logarithmicDepthBuffer: false;"
+                colorManagement: true;
+                sortObjects: true;
+                physicallyCorrectLights: false;"
       style="display: none;"
       id="ar-scene"
       stats="false"
       inspector="url: false"
-      background="color: #000000; transparent: false"
     >
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
@@ -491,7 +489,7 @@
         </a-entity>
         <a-text
           class="target-text"
-          value=""
+          value="Link A"
           color="white"
           position="0 0.6 0"
           scale="0.5 0.5 0.5"
@@ -516,7 +514,7 @@
         </a-entity>
         <a-text
           class="target-text"
-          value=""
+          value="Link A"
           color="white"
           position="0 0.6 0"
           scale="0.5 0.5 0.5"
@@ -590,7 +588,7 @@
           startupScreen.classList.add("hidden");
           arScene.style.display = "block";
           isARStarted = true;
-          // MindAR will handle camera initialization automatically
+          initializeCamera();
         }, 300); // 300ms delay to let the button hover/press animation finish
       }
 
@@ -599,39 +597,28 @@
         // Start checking for AR readiness
         checkARReady();
 
-        // Add AR scene event listeners for debugging
-        arScene.addEventListener('arReady', () => {
-          console.log('AR system is ready');
-        });
-
-        arScene.addEventListener('arError', (event) => {
-          console.error('AR error:', event.detail);
-        });
-
-        // Minimal video event listeners for maximum performance
+        // Add video event listeners for debugging
         video.addEventListener('loadeddata', () => {
           console.log('Video loaded and ready to play');
+        });
+
+        video.addEventListener('timeupdate', () => {
+          // Only log occasionally to avoid spam
+          if (Math.floor(video.currentTime) % 5 === 0 && video.currentTime % 1 < 0.1) {
+            console.log(`Video time: ${video.currentTime.toFixed(2)}s`);
+          }
         });
 
         video.addEventListener('ended', () => {
           console.log('Video ended');
           isVideoPlaying = false;
         });
-
-        // Extremely minimal time update for performance
-        let lastLogTime = 0;
-        video.addEventListener('timeupdate', () => {
-          const currentTime = Math.floor(video.currentTime);
-          if (currentTime !== lastLogTime && currentTime % 60 === 0) {
-            console.log(`Video time: ${video.currentTime.toFixed(2)}s`);
-            lastLogTime = currentTime;
-          }
-        });
       });
 
       function hideAllTexts() {
-        // Optimized: Use cached elements instead of forEach
-        Object.values(targetElements).forEach(t => t.text.setAttribute("opacity", "0"));
+        targetTexts.forEach(text => {
+          text.setAttribute("opacity", "0");
+        });
       }
 
       function startVideo() {
@@ -691,26 +678,9 @@
         }
       }
 
-      // Cache DOM elements for better performance
-      const targetElements = {
-        "target-0": {
-          element: document.getElementById("target-0"),
-          video: document.querySelector("#target-0 a-video"),
-          text: document.querySelector("#target-0 .target-text")
-        },
-        "target-1": {
-          element: document.getElementById("target-1"),
-          video: document.querySelector("#target-1 a-video"),
-          text: document.querySelector("#target-1 .target-text")
-        }
-      };
-
       const allTargets = ["target-0", "target-1"];
       allTargets.forEach(id => {
-        const target = targetElements[id].element;
-        const targetVideo = targetElements[id].video;
-        const targetText = targetElements[id].text;
-
+        const target = document.getElementById(id);
         target.addEventListener("targetFound", () => {
           console.log(`Target ${id} found - resuming video playback`);
           currentTarget = id;
@@ -720,10 +690,10 @@
             startVideo();
 
             // Show the corresponding a-video element
-            targetVideo.setAttribute("visible", true);
-            targetText.setAttribute("opacity", "0");
+            document.querySelector(`#${id} a-video`).setAttribute("visible", true);
+            document.querySelector(`#${id} .target-text`).setAttribute("opacity", "0");
           } else {
-            targetText.setAttribute("opacity", "1");
+            document.querySelector(`#${id} .target-text`).setAttribute("opacity", "1");
           }
         });
 
@@ -733,8 +703,8 @@
           // Stop video playback immediately when target is lost
           stopVideo();
 
-          // Hide all a-video elements efficiently
-          Object.values(targetElements).forEach(t => t.video.setAttribute("visible", false));
+          // Hide all a-video elements
+          document.querySelectorAll("a-video").forEach(v => v.setAttribute("visible", false));
 
           // Hide website link and texts
           websiteLink.style.display = "none";
@@ -745,8 +715,35 @@
         });
       });
 
-      // Camera initialization is handled by MindAR automatically
-      // No custom camera function needed
+      async function initializeCamera() {
+        try {
+          // Set high-resolution camera constraints for better AR tracking
+          const constraints = {
+            video: {
+              facingMode: "environment",
+              width: { ideal: 1920, min: 1280 },
+              height: { ideal: 1080, min: 720 },
+              frameRate: { ideal: 30, min: 15 }
+            }
+          };
+
+          // Request camera access with high resolution
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          console.log("High-resolution AR camera initialized");
+          console.log(`Camera resolution: ${stream.getVideoTracks()[0].getSettings().width}x${stream.getVideoTracks()[0].getSettings().height}`);
+        } catch (err) {
+          console.warn("High-resolution camera access failed, trying fallback:", err);
+          try {
+            // Fallback to lower resolution if high-res fails
+            const fallbackStream = await navigator.mediaDevices.getUserMedia({
+              video: { facingMode: "environment" }
+            });
+            console.log("Fallback camera initialized");
+          } catch (fallbackErr) {
+            console.error("Camera access completely failed:", fallbackErr);
+          }
+        }
+      }
     </script>
   </body>
 </html>
