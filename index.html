@@ -449,25 +449,27 @@
     <a-scene
       mindar-image="imageTargetSrc: https://FAiRarWeb.github.io/project12/targets.mind;
                     uiScanning: no;
-                    filterMinCF: 0.0001;
-                    filterBeta: 0.001;
-                    missTolerance: 5;
-                    warmupTolerance: 3;
-                    maxTrack: 2;
+                    filterMinCF: 0.001;
+                    filterBeta: 0.01;
+                    missTolerance: 3;
+                    warmupTolerance: 2;
+                    maxTrack: 1;
                     showStats: false;"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
-      renderer="precision: high;
-                antialias: true;
-                alpha: true;
+      renderer="precision: mediump;
+                antialias: false;
+                alpha: false;
                 powerPreference: high-performance;
-                colorManagement: true;
-                sortObjects: true;
-                physicallyCorrectLights: false;"
+                colorManagement: false;
+                sortObjects: false;
+                physicallyCorrectLights: false;
+                logarithmicDepthBuffer: false;"
       style="display: none;"
       id="ar-scene"
       stats="false"
       inspector="url: false"
+      background="color: #000000; transparent: false"
     >
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
@@ -607,11 +609,11 @@
           isVideoPlaying = false;
         });
 
-        // Throttled time update for performance
+        // Minimal time update for performance
         let lastLogTime = 0;
         video.addEventListener('timeupdate', () => {
           const currentTime = Math.floor(video.currentTime);
-          if (currentTime !== lastLogTime && currentTime % 10 === 0) {
+          if (currentTime !== lastLogTime && currentTime % 30 === 0) {
             console.log(`Video time: ${video.currentTime.toFixed(2)}s`);
             lastLogTime = currentTime;
           }
@@ -619,9 +621,8 @@
       });
 
       function hideAllTexts() {
-        targetTexts.forEach(text => {
-          text.setAttribute("opacity", "0");
-        });
+        // Optimized: Use cached elements instead of forEach
+        Object.values(targetElements).forEach(t => t.text.setAttribute("opacity", "0"));
       }
 
       function startVideo() {
@@ -737,26 +738,31 @@
 
       async function initializeCamera() {
         try {
-          // Set high-resolution camera constraints for better AR tracking
+          // Optimized camera constraints for better performance
           const constraints = {
             video: {
               facingMode: "environment",
-              width: { ideal: 1920, min: 1280 },
-              height: { ideal: 1080, min: 720 },
-              frameRate: { ideal: 30, min: 15 }
+              width: { ideal: 1280, min: 640 },
+              height: { ideal: 720, min: 480 },
+              frameRate: { ideal: 30, min: 20 }
             }
           };
 
-          // Request camera access with high resolution
+          // Request camera access with optimized resolution
           const stream = await navigator.mediaDevices.getUserMedia(constraints);
-          console.log("High-resolution AR camera initialized");
+          console.log("Optimized AR camera initialized");
           console.log(`Camera resolution: ${stream.getVideoTracks()[0].getSettings().width}x${stream.getVideoTracks()[0].getSettings().height}`);
+          console.log(`Camera FPS: ${stream.getVideoTracks()[0].getSettings().frameRate}`);
         } catch (err) {
-          console.warn("High-resolution camera access failed, trying fallback:", err);
+          console.warn("Optimized camera access failed, trying fallback:", err);
           try {
-            // Fallback to lower resolution if high-res fails
+            // Fallback to basic resolution for maximum compatibility
             const fallbackStream = await navigator.mediaDevices.getUserMedia({
-              video: { facingMode: "environment" }
+              video: {
+                facingMode: "environment",
+                width: { ideal: 640 },
+                height: { ideal: 480 }
+              }
             });
             console.log("Fallback camera initialized");
           } catch (fallbackErr) {
