@@ -590,7 +590,7 @@
           startupScreen.classList.add("hidden");
           arScene.style.display = "block";
           isARStarted = true;
-          initializeCamera();
+          // MindAR will handle camera initialization automatically
         }, 300); // 300ms delay to let the button hover/press animation finish
       }
 
@@ -598,6 +598,15 @@
       document.addEventListener("DOMContentLoaded", () => {
         // Start checking for AR readiness
         checkARReady();
+
+        // Add AR scene event listeners for debugging
+        arScene.addEventListener('arReady', () => {
+          console.log('AR system is ready');
+        });
+
+        arScene.addEventListener('arError', (event) => {
+          console.error('AR error:', event.detail);
+        });
 
         // Minimal video event listeners for maximum performance
         video.addEventListener('loadeddata', () => {
@@ -736,41 +745,8 @@
         });
       });
 
-      async function initializeCamera() {
-        try {
-          // High FPS optimized camera constraints - prioritizing performance over quality
-          const constraints = {
-            video: {
-              facingMode: "environment",
-              width: { ideal: 640, min: 480 },
-              height: { ideal: 480, min: 360 },
-              frameRate: { ideal: 60, min: 30 }
-            }
-          };
-
-          // Request camera access with high FPS, lower resolution
-          const stream = await navigator.mediaDevices.getUserMedia(constraints);
-          console.log("High FPS AR camera initialized");
-          console.log(`Camera resolution: ${stream.getVideoTracks()[0].getSettings().width}x${stream.getVideoTracks()[0].getSettings().height}`);
-          console.log(`Camera FPS: ${stream.getVideoTracks()[0].getSettings().frameRate}`);
-        } catch (err) {
-          console.warn("High FPS camera access failed, trying fallback:", err);
-          try {
-            // Ultra-low resolution fallback for maximum FPS
-            const fallbackStream = await navigator.mediaDevices.getUserMedia({
-              video: {
-                facingMode: "environment",
-                width: { ideal: 480 },
-                height: { ideal: 360 },
-                frameRate: { ideal: 30 }
-              }
-            });
-            console.log("Ultra-low resolution fallback camera initialized");
-          } catch (fallbackErr) {
-            console.error("Camera access completely failed:", fallbackErr);
-          }
-        }
-      }
+      // Camera initialization is handled by MindAR automatically
+      // No custom camera function needed
     </script>
   </body>
 </html>
