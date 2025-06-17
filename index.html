@@ -441,7 +441,8 @@
       src="https://fairarweb.github.io/project12/videotest.mp4"
       muted
       playsinline
-      preload="auto"
+      preload="metadata"
+      crossorigin="anonymous"
       style="display: none"
     ></video>
 
@@ -451,12 +452,22 @@
                     filterMinCF: 0.0001;
                     filterBeta: 0.001;
                     missTolerance: 5;
-                    warmupTolerance: 3;"
+                    warmupTolerance: 3;
+                    maxTrack: 2;
+                    showStats: false;"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
-      renderer="precision: high; antialias: true;"
+      renderer="precision: high;
+                antialias: true;
+                alpha: true;
+                powerPreference: high-performance;
+                colorManagement: true;
+                sortObjects: true;
+                physicallyCorrectLights: false;"
       style="display: none;"
       id="ar-scene"
+      stats="false"
+      inspector="url: false"
     >
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
@@ -586,21 +597,24 @@
         // Start checking for AR readiness
         checkARReady();
 
-        // Add video event listeners for debugging
+        // Add optimized video event listeners
         video.addEventListener('loadeddata', () => {
           console.log('Video loaded and ready to play');
-        });
-
-        video.addEventListener('timeupdate', () => {
-          // Only log occasionally to avoid spam
-          if (Math.floor(video.currentTime) % 5 === 0 && video.currentTime % 1 < 0.1) {
-            console.log(`Video time: ${video.currentTime.toFixed(2)}s`);
-          }
         });
 
         video.addEventListener('ended', () => {
           console.log('Video ended');
           isVideoPlaying = false;
+        });
+
+        // Throttled time update for performance
+        let lastLogTime = 0;
+        video.addEventListener('timeupdate', () => {
+          const currentTime = Math.floor(video.currentTime);
+          if (currentTime !== lastLogTime && currentTime % 10 === 0) {
+            console.log(`Video time: ${video.currentTime.toFixed(2)}s`);
+            lastLogTime = currentTime;
+          }
         });
       });
 
@@ -667,9 +681,26 @@
         }
       }
 
+      // Cache DOM elements for better performance
+      const targetElements = {
+        "target-0": {
+          element: document.getElementById("target-0"),
+          video: document.querySelector("#target-0 a-video"),
+          text: document.querySelector("#target-0 .target-text")
+        },
+        "target-1": {
+          element: document.getElementById("target-1"),
+          video: document.querySelector("#target-1 a-video"),
+          text: document.querySelector("#target-1 .target-text")
+        }
+      };
+
       const allTargets = ["target-0", "target-1"];
       allTargets.forEach(id => {
-        const target = document.getElementById(id);
+        const target = targetElements[id].element;
+        const targetVideo = targetElements[id].video;
+        const targetText = targetElements[id].text;
+
         target.addEventListener("targetFound", () => {
           console.log(`Target ${id} found - resuming video playback`);
           currentTarget = id;
@@ -679,10 +710,10 @@
             startVideo();
 
             // Show the corresponding a-video element
-            document.querySelector(`#${id} a-video`).setAttribute("visible", true);
-            document.querySelector(`#${id} .target-text`).setAttribute("opacity", "0");
+            targetVideo.setAttribute("visible", true);
+            targetText.setAttribute("opacity", "0");
           } else {
-            document.querySelector(`#${id} .target-text`).setAttribute("opacity", "1");
+            targetText.setAttribute("opacity", "1");
           }
         });
 
@@ -692,8 +723,8 @@
           // Stop video playback immediately when target is lost
           stopVideo();
 
-          // Hide all a-video elements
-          document.querySelectorAll("a-video").forEach(v => v.setAttribute("visible", false));
+          // Hide all a-video elements efficiently
+          Object.values(targetElements).forEach(t => t.video.setAttribute("visible", false));
 
           // Hide website link and texts
           websiteLink.style.display = "none";
@@ -706,10 +737,31 @@
 
       async function initializeCamera() {
         try {
-          // Camera initialization is handled by MindAR
-          console.log("AR camera initialized");
+          // Set high-resolution camera constraints for better AR tracking
+          const constraints = {
+            video: {
+              facingMode: "environment",
+              width: { ideal: 1920, min: 1280 },
+              height: { ideal: 1080, min: 720 },
+              frameRate: { ideal: 30, min: 15 }
+            }
+          };
+
+          // Request camera access with high resolution
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          console.log("High-resolution AR camera initialized");
+          console.log(`Camera resolution: ${stream.getVideoTracks()[0].getSettings().width}x${stream.getVideoTracks()[0].getSettings().height}`);
         } catch (err) {
-          console.warn("Camera access failed:", err);
+          console.warn("High-resolution camera access failed, trying fallback:", err);
+          try {
+            // Fallback to lower resolution if high-res fails
+            const fallbackStream = await navigator.mediaDevices.getUserMedia({
+              video: { facingMode: "environment" }
+            });
+            console.log("Fallback camera initialized");
+          } catch (fallbackErr) {
+            console.error("Camera access completely failed:", fallbackErr);
+          }
         }
       }
     </script>
