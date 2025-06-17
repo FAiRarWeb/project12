@@ -439,7 +439,6 @@
     <video
       id="ar-video"
       src="https://fairarweb.github.io/project12/videotest.mp4"
-      loop
       muted
       playsinline
       preload="auto"
@@ -586,6 +585,23 @@
       document.addEventListener("DOMContentLoaded", () => {
         // Start checking for AR readiness
         checkARReady();
+
+        // Add video event listeners for debugging
+        video.addEventListener('loadeddata', () => {
+          console.log('Video loaded and ready to play');
+        });
+
+        video.addEventListener('timeupdate', () => {
+          // Only log occasionally to avoid spam
+          if (Math.floor(video.currentTime) % 5 === 0 && video.currentTime % 1 < 0.1) {
+            console.log(`Video time: ${video.currentTime.toFixed(2)}s`);
+          }
+        });
+
+        video.addEventListener('ended', () => {
+          console.log('Video ended');
+          isVideoPlaying = false;
+        });
       });
 
       function hideAllTexts() {
@@ -597,7 +613,7 @@
       function startVideo() {
         if (isVideoPlaying) return;
 
-        console.log("Resuming video playback from current position");
+        console.log(`Resuming video playback from position: ${video.currentTime.toFixed(2)}s`);
 
         // Don't reset currentTime - continue from where it was paused
         video.muted = false;
@@ -622,7 +638,7 @@
       function stopVideo() {
         if (!isVideoPlaying) return;
 
-        console.log("Pausing video playback at current position");
+        console.log(`Pausing video playback at position: ${video.currentTime.toFixed(2)}s`);
         video.pause();
         // Don't reset currentTime - keep current position for resume
         video.muted = true;
