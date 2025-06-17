@@ -1,184 +1,651 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <meta charset="UTF-8" />
+    <title>FAir AR</title>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.0.0/dist/aframe-extras.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-
-    <!-- Gesture Components -->
-    <script>
-      // Pinch to Zoom
-      AFRAME.registerComponent("pinch-zoom", {
-        schema: {
-          minScale: { type: "number", default: 0.5 },
-          maxScale: { type: "number", default: 3 },
-        },
-        init: function () {
-          this.initialDistance = null;
-          this.initialScale = null;
-          this.handleTouchMove = this.handleTouchMove.bind(this);
-          this.el.sceneEl.canvas.addEventListener(
-            "touchmove",
-            this.handleTouchMove,
-            { passive: false }
-          );
-        },
-        remove: function () {
-          this.el.sceneEl.canvas.removeEventListener(
-            "touchmove",
-            this.handleTouchMove
-          );
-        },
-        handleTouchMove: function (event) {
-          if (event.touches.length === 2) {
-            event.preventDefault();
-            const dx = event.touches[0].clientX - event.touches[1].clientX;
-            const dy = event.touches[0].clientY - event.touches[1].clientY;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            if (!this.initialDistance) {
-              this.initialDistance = distance;
-              this.initialScale = this.el.object3D.scale.x;
-            } else {
-              const scaleFactor = distance / this.initialDistance;
-              let newScale = this.initialScale * scaleFactor;
-              newScale = Math.max(
-                this.data.minScale,
-                Math.min(this.data.maxScale, newScale)
-              );
-              this.el.object3D.scale.set(newScale, newScale, newScale);
-            }
-          } else {
-            this.initialDistance = null;
-          }
-        },
-      });
-
-      // Drag to Rotate (X and Y)
-      AFRAME.registerComponent("drag-rotate", {
-        schema: { speed: { type: "number", default: 1 } },
-        init: function () {
-          this.isDragging = false;
-          this.lastX = 0;
-          this.lastY = 0;
-
-          this.handleTouchStart = (e) => {
-            if (e.touches.length === 1) {
-              this.isDragging = true;
-              this.lastX = e.touches[0].clientX;
-              this.lastY = e.touches[0].clientY;
-            }
-          };
-
-          this.handleTouchMove = (e) => {
-            if (this.isDragging && e.touches.length === 1) {
-              const currentX = e.touches[0].clientX;
-              const currentY = e.touches[0].clientY;
-
-              const deltaX = currentX - this.lastX;
-              const deltaY = currentY - this.lastY;
-
-              this.lastX = currentX;
-              this.lastY = currentY;
-
-              const rotation = this.el.getAttribute("rotation");
-              const newRotation = {
-                x: THREE.MathUtils.clamp(
-                  rotation.x + deltaY * 0.5 * this.data.speed,
-                  -90,
-                  90
-                ),
-                y: rotation.y + deltaX * 0.5 * this.data.speed,
-                z: rotation.z,
-              };
-
-              this.el.setAttribute("rotation", newRotation);
-            }
-          };
-
-          this.handleTouchEnd = () => {
-            this.isDragging = false;
-          };
-
-          this.el.sceneEl.canvas.addEventListener(
-            "touchstart",
-            this.handleTouchStart
-          );
-          this.el.sceneEl.canvas.addEventListener(
-            "touchmove",
-            this.handleTouchMove
-          );
-          this.el.sceneEl.canvas.addEventListener(
-            "touchend",
-            this.handleTouchEnd
-          );
-        },
-
-        remove: function () {
-          this.el.sceneEl.canvas.removeEventListener(
-            "touchstart",
-            this.handleTouchStart
-          );
-          this.el.sceneEl.canvas.removeEventListener(
-            "touchmove",
-            this.handleTouchMove
-          );
-          this.el.sceneEl.canvas.removeEventListener(
-            "touchend",
-            this.handleTouchEnd
-          );
-        },
-      });
-
-      // Tap to Toggle Animation (start/stop)
-      AFRAME.registerComponent("tap-animation", {
-        init: function () {
-          this.isPlaying = false;
-          const model = this.el; // Get the 3D model
-          model.addEventListener("click", () => {
-            // Toggle animation play state on tap
-            if (this.isPlaying) {
-              model.setAttribute("animation-mixer", "enabled: false");
-            } else {
-              model.setAttribute("animation-mixer", "enabled: true");
-            }
-            this.isPlaying = !this.isPlaying; // Toggle the state
-          });
-        },
-      });
-    </script>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
+      * {
+        box-sizing: border-box;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: 'Arial', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
       .a-enter-vr {
         display: none !important;
+      }
+
+      /* Startup Screen Styles */
+      #startup-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        height: -webkit-fill-available;
+        background-color: white;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        font-family: 'Arial', sans-serif;
+        padding: 20px;
+        overflow: hidden;
+      }
+
+      #startup-screen.hidden {
+        display: none;
+      }
+
+      .logo-container {
+        margin-bottom: 40px;
+      }
+
+      .logo-text {
+        font-size: clamp(32px, 8vw, 48px);
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 20px;
+        text-align: center;
+        line-height: 1.2;
+      }
+
+      /* Artivive-style Loading Animation */
+      .loading-container {
+        margin-bottom: 40px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .loading-spinner {
+        width: clamp(50px, 12vw, 60px);
+        height: clamp(50px, 12vw, 60px);
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #333;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+      }
+
+      .loading-spinner.hidden {
+        display: none;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      /* Green Checkmark */
+      .checkmark-container {
+        width: clamp(50px, 12vw, 60px);
+        height: clamp(50px, 12vw, 60px);
+        margin: 0 auto 20px;
+        display: none;
+      }
+
+      .checkmark-container.show {
+        display: block;
+        animation: checkmarkAppear 0.5s ease-out;
+      }
+
+      .checkmark {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background-color: #4CAF50;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+      }
+
+      .checkmark::after {
+        content: '✓';
+        color: white;
+        font-size: clamp(20px, 6vw, 30px);
+        font-weight: bold;
+      }
+
+      @keyframes checkmarkAppear {
+        0% {
+          transform: scale(0);
+          opacity: 0;
+        }
+        50% {
+          transform: scale(1.2);
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      .loading-text {
+        font-size: clamp(16px, 4vw, 18px);
+        color: #666;
+        text-align: center;
+        animation: pulse 2s ease-in-out infinite;
+        padding: 0 20px;
+        line-height: 1.4;
+      }
+
+      .loading-text.ready {
+        animation: none;
+        color: #4CAF50;
+        font-weight: bold;
+      }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 0.6; }
+        50% { opacity: 1; }
+      }
+
+      /* Start Button */
+      #start-button {
+        padding: clamp(15px, 4vw, 20px) clamp(40px, 12vw, 60px);
+        font-size: clamp(18px, 5vw, 24px);
+        font-weight: bold;
+        background-color: #333;
+        color: white;
+        border: none;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        display: none;
+        outline: none;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        min-height: 50px;
+        min-width: 150px;
+      }
+
+      #start-button:hover {
+        background-color: #4CAF50;
+        transform: translateY(-2px);
+        box-shadow: 0 12px 25px rgba(76, 175, 80, 0.4);
+      }
+
+      #start-button:active {
+        transform: translateY(0px);
+        box-shadow: 0 6px 15px rgba(76, 175, 80, 0.3);
+        background-color: #45a049;
+      }
+
+      #start-button:focus {
+        outline: none;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      }
+
+      #start-button.show {
+        display: block;
+        animation: fadeInUp 0.5s ease-out;
+      }
+
+      /* Mobile-specific touch improvements */
+      @media (hover: none) and (pointer: coarse) {
+        #start-button:hover {
+          background-color: #333;
+          transform: none;
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        #start-button:active {
+          background-color: #4CAF50;
+          transform: scale(0.98);
+        }
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      #toggle-button {
+        position: fixed;
+        bottom: clamp(80px, 15vh, 120px);
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        padding: clamp(12px, 3vw, 20px) clamp(30px, 8vw, 50px);
+        font-size: clamp(14px, 3.5vw, 16px);
+        background-color: white;
+        color: black;
+        box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.15);
+        border: 2px solid transparent;
+        border-radius: 25px;
+        transition: all 0.2s ease;
+        outline: none;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        min-height: 44px;
+        min-width: 80px;
+      }
+
+      #toggle-button:hover {
+        background-color: #f0f0f0;
+      }
+
+      #toggle-button:active {
+        background-color: #cad5d9;
+        color: white;
+        transform: translateX(-50%) scale(0.96);
+      }
+
+      .ar-link {
+        position: fixed;
+        bottom: clamp(20px, 4vh, 40px);
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #4caf50;
+        color: white;
+        padding: clamp(12px, 3vw, 15px) clamp(20px, 6vw, 30px);
+        border-radius: 25px;
+        text-decoration: none;
+        font-family: Arial, sans-serif;
+        font-size: clamp(16px, 4vw, 18px);
+        display: none;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        outline: none;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        min-height: 44px;
+        min-width: 120px;
+        text-align: center;
+      }
+
+      .ar-link:hover {
+        background-color: #45a049;
+      }
+
+      .ar-link:active {
+        background-color: #3d8b40;
+        transform: translateX(-50%) scale(0.98);
+      }
+
+      .target-text {
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+
+      .tv-frame {
+        position: absolute;
+        width: 1.1;
+        height: 0.6;
+        background-color: #333;
+        border-radius: 0.1;
+        z-index: -1;
+      }
+
+      .tv-stand {
+        position: absolute;
+        width: 0.2;
+        height: 0.1;
+        background-color: #333;
+        bottom: -0.1;
+        left: 0.45;
+      }
+
+      .video-container {
+        position: absolute;
+        width: 1;
+        height: 0.5;
+        overflow: hidden;
+      }
+
+      /* Mobile-specific optimizations */
+      @media screen and (max-width: 768px) {
+        .logo-text {
+          font-size: clamp(28px, 10vw, 40px);
+          margin-bottom: 15px;
+        }
+
+        .loading-container {
+          margin-bottom: 30px;
+        }
+
+        #startup-screen {
+          padding: 15px;
+        }
+
+        .loading-spinner,
+        .checkmark-container {
+          width: clamp(45px, 15vw, 55px);
+          height: clamp(45px, 15vw, 55px);
+          margin-bottom: 15px;
+        }
+
+        .checkmark::after {
+          font-size: clamp(18px, 8vw, 25px);
+        }
+
+        .loading-text {
+          font-size: clamp(14px, 4.5vw, 16px);
+        }
+
+        #start-button {
+          padding: clamp(12px, 4vw, 18px) clamp(35px, 15vw, 55px);
+          font-size: clamp(16px, 5.5vw, 22px);
+          min-height: 48px;
+          min-width: 140px;
+        }
+      }
+
+      /* Small mobile devices */
+      @media screen and (max-width: 480px) {
+        .logo-text {
+          font-size: clamp(24px, 12vw, 36px);
+        }
+
+        #toggle-button {
+          bottom: clamp(70px, 12vh, 100px);
+          padding: clamp(10px, 3vw, 16px) clamp(25px, 8vw, 40px);
+          font-size: clamp(12px, 4vw, 14px);
+        }
+
+        .ar-link {
+          bottom: clamp(15px, 3vh, 30px);
+          padding: clamp(10px, 3vw, 12px) clamp(18px, 6vw, 25px);
+          font-size: clamp(14px, 4.5vw, 16px);
+        }
+      }
+
+      /* Landscape orientation on mobile */
+      @media screen and (max-height: 500px) and (orientation: landscape) {
+        #startup-screen {
+          padding: 10px;
+        }
+
+        .logo-container {
+          margin-bottom: 20px;
+        }
+
+        .logo-text {
+          font-size: clamp(20px, 6vh, 32px);
+          margin-bottom: 10px;
+        }
+
+        .loading-container {
+          margin-bottom: 20px;
+        }
+
+        .loading-spinner,
+        .checkmark-container {
+          width: clamp(35px, 8vh, 45px);
+          height: clamp(35px, 8vh, 45px);
+          margin-bottom: 10px;
+        }
+
+        .loading-text {
+          font-size: clamp(12px, 3vh, 14px);
+        }
+
+        #start-button {
+          padding: clamp(8px, 2vh, 12px) clamp(25px, 8vw, 40px);
+          font-size: clamp(14px, 3.5vh, 18px);
+          min-height: 40px;
+        }
       }
     </style>
   </head>
 
   <body>
+    <!-- Startup Screen -->
+    <div id="startup-screen">
+      <div class="logo-container">
+        <div class="logo-text">AR Experience</div>
+      </div>
+
+      <div class="loading-container">
+        <div class="loading-spinner" id="loading-spinner"></div>
+        <div class="checkmark-container" id="checkmark-container">
+          <div class="checkmark"></div>
+        </div>
+        <div class="loading-text" id="loading-text">Loading AR Experience...</div>
+      </div>
+
+      <button id="start-button" onclick="startARExperience()">Start AR</button>
+    </div>
+
+    <button id="toggle-button" onclick="toggleInfo()">Info</button>
+    <a href="#" class="ar-link" id="websiteLink">Visit Website</a>
+
+    <video
+      id="ar-video"
+      src="https://fairarweb.github.io/project/WhatsApp%20Video%202025-05-20%20at%2010.08.10_53f8c34b.mp4"
+      loop
+      autoplay
+      muted
+      playsinline
+      style="display: none"
+    ></video>
+
     <a-scene
-      mindar-image="imageTargetSrc: ./targets.mind;
-                    uiScanning: no; 
-                    filterMinCF: 0.0001; 
-                    filterBeta: 0.001; 
-                    missTolerance: 5; 
+      mindar-image="imageTargetSrc: https://FAiRarWeb.github.io/project/targets.mind;
+                    uiScanning: no;
+                    filterMinCF: 0.0001;
+                    filterBeta: 0.001;
+                    missTolerance: 5;
                     warmupTolerance: 3;"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
+      renderer="precision: high; antialias: true;"
+      style="display: none;"
+      id="ar-scene"
     >
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <a-entity mindar-image-target="targetIndex: 0">
-        <a-gltf-model
-          rotation="0 0 0"
-          position="-0.3 -0.5 0"
+      <!-- Image Target 0 -->
+      <a-entity mindar-image-target="targetIndex: 0" id="target-0">
+        <a-entity class="tv-frame" position="0 0 -0.01">
+          <a-entity class="tv-stand"></a-entity>
+        </a-entity>
+        <a-entity class="video-container" position="0 0 0">
+          <a-video
+            id="video-plane"
+            src="https://fairarweb.github.io/project/WhatsApp%20Video%202025-05-20%20at%2010.08.10_53f8c34b.mp4"
+            position="0 0 0"
+            width="1"
+            height="0.45"
+            scale="1 1 1"
+            visible="true"
+          ></a-video>
+        </a-entity>
+        <a-text
+          class="target-text"
+          value="Link A"
+          color="white"
+          position="0 0.6 0"
           scale="0.5 0.5 0.5"
-          src="./need_some_space.glb"
-          animation-mixer="clip: *"
-          pinch-zoom
-          drag-rotate
-          tap-animation
-        ></a-gltf-model>
+        ></a-text>
+      </a-entity>
+
+      <!-- Image Target 1 - Duplicate video + text -->
+      <a-entity mindar-image-target="targetIndex: 1" id="target-1">
+        <a-entity class="tv-frame" position="0 0 -0.01">
+          <a-entity class="tv-stand"></a-entity>
+        </a-entity>
+        <a-entity class="video-container" position="0 0 0">
+          <a-video
+            src="https://fairarweb.github.io/project/WhatsApp%20Video%202025-05-20%20at%2010.08.10_53f8c34b.mp4"
+            position="0 0.05 0"
+            width="1"
+            height="0.45"
+            scale="1 1 1"
+            visible="true"
+          ></a-video>
+        </a-entity>
+        <a-text
+          class="target-text"
+          value="Link A"
+          color="white"
+          position="0 0.6 0"
+          scale="0.5 0.5 0.5"
+        ></a-text>
       </a-entity>
     </a-scene>
+
+    <script>
+      let isInfoShown = false;
+      const websiteLink = document.getElementById("websiteLink");
+      const video = document.getElementById("ar-video");
+      const videoPlane = document.getElementById("video-plane");
+      const targetTexts = document.querySelectorAll(".target-text");
+      const startupScreen = document.getElementById("startup-screen");
+      const startButton = document.getElementById("start-button");
+      const arScene = document.getElementById("ar-scene");
+      const loadingSpinner = document.getElementById("loading-spinner");
+      const checkmarkContainer = document.getElementById("checkmark-container");
+      const loadingText = document.getElementById("loading-text");
+
+      let currentTarget = null;
+      let isARStarted = false;
+      let isARReady = false;
+
+      // Startup screen functionality
+      function checkARReady() {
+        // Check if MindAR is ready
+        if (window.MINDAR && arScene) {
+          // Listen for AR system ready event
+          arScene.addEventListener('loaded', () => {
+            setTimeout(() => {
+              showARReady();
+            }, 500);
+          });
+
+          // Fallback timer in case event doesn't fire
+          setTimeout(() => {
+            if (!isARReady) {
+              showARReady();
+            }
+          }, 3000);
+        } else {
+          // Keep checking until MindAR is loaded
+          setTimeout(checkARReady, 500);
+        }
+      }
+
+      function showARReady() {
+        isARReady = true;
+        // Hide loading spinner
+        loadingSpinner.classList.add("hidden");
+        // Show checkmark
+        checkmarkContainer.classList.add("show");
+        // Update text
+        loadingText.textContent = "AR Ready!";
+        loadingText.classList.add("ready");
+        // Show start button
+        setTimeout(() => {
+          startButton.classList.add("show");
+        }, 500);
+      }
+
+      function startARExperience() {
+        // Add a pressed state to the button
+        startButton.style.transform = 'translateY(0px) scale(0.98)';
+        startButton.style.backgroundColor = '#45a049';
+        startButton.style.boxShadow = '0 6px 15px rgba(76, 175, 80, 0.3)';
+
+        // Wait for the button animation to complete before starting AR
+        setTimeout(() => {
+          startupScreen.classList.add("hidden");
+          arScene.style.display = "block";
+          isARStarted = true;
+          initializeCamera();
+        }, 300); // 300ms delay to let the button hover/press animation finish
+      }
+
+      // Initialize the startup sequence
+      document.addEventListener("DOMContentLoaded", () => {
+        // Start checking for AR readiness
+        checkARReady();
+      });
+
+      function hideAllTexts() {
+        targetTexts.forEach(text => {
+          text.setAttribute("opacity", "0");
+        });
+      }
+
+      function toggleInfo() {
+        if (!currentTarget) return;
+
+        isInfoShown = !isInfoShown;
+
+        if (isInfoShown) {
+          video.pause();
+          document.querySelectorAll("a-video").forEach(v => v.setAttribute("visible", false));
+          websiteLink.href = "https://www.youtube.com/";
+          websiteLink.textContent = "Visit YouTube";
+          websiteLink.style.display = "block";
+          document.querySelector(`#${currentTarget} .target-text`).setAttribute("opacity", "1");
+        } else {
+          video.play();
+          document.querySelectorAll("a-video").forEach(v => v.setAttribute("visible", true));
+          websiteLink.style.display = "none";
+          hideAllTexts();
+        }
+      }
+
+      const allTargets = ["target-0", "target-1"];
+      allTargets.forEach(id => {
+        const target = document.getElementById(id);
+        target.addEventListener("targetFound", () => {
+          currentTarget = id;
+          if (!isInfoShown) {
+            video.play();
+            document.querySelector(`#${id} .target-text`).setAttribute("opacity", "0");
+          } else {
+            document.querySelector(`#${id} .target-text`).setAttribute("opacity", "1");
+          }
+        });
+
+        target.addEventListener("targetLost", () => {
+          currentTarget = null;
+          video.pause();
+          websiteLink.style.display = "none";
+          hideAllTexts();
+        });
+      });
+
+      async function initializeCamera() {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } },
+          });
+          video.srcObject = stream;
+          video.setAttribute("playsinline", true);
+          video.play();
+        } catch (err) {
+          console.warn("Camera access failed:", err);
+        }
+      }
+    </script>
   </body>
 </html>
