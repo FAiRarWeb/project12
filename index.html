@@ -442,6 +442,7 @@
       loop
       muted
       playsinline
+      preload="auto"
       style="display: none"
     ></video>
 
@@ -467,14 +468,13 @@
         </a-entity>
         <a-entity class="video-container" position="0 0 0">
           <a-video
-            id="video-plane"
-            src="https://fairarweb.github.io/project12/videotest.mp4"
+            id="video-plane-0"
+            src="#ar-video"
             position="0 0 0"
             width="1"
             height="0.45"
             scale="1 1 1"
             visible="false"
-            autoplay="false"
           ></a-video>
         </a-entity>
         <a-text
@@ -493,13 +493,13 @@
         </a-entity>
         <a-entity class="video-container" position="0 0 0">
           <a-video
-            src="https://fairarweb.github.io/project12/videotest.mp4"
+            id="video-plane-1"
+            src="#ar-video"
             position="0 0.05 0"
             width="1"
             height="0.45"
             scale="1 1 1"
             visible="false"
-            autoplay="false"
           ></a-video>
         </a-entity>
         <a-text
@@ -516,7 +516,6 @@
       let isInfoShown = false;
       const websiteLink = document.getElementById("websiteLink");
       const video = document.getElementById("ar-video");
-      const videoPlane = document.getElementById("video-plane");
       const targetTexts = document.querySelectorAll(".target-text");
       const startupScreen = document.getElementById("startup-screen");
       const startButton = document.getElementById("start-button");
@@ -528,6 +527,7 @@
       let currentTarget = null;
       let isARStarted = false;
       let isARReady = false;
+      let isVideoPlaying = false;
 
       // Startup screen functionality
       function checkARReady() {
@@ -594,32 +594,56 @@
         });
       }
 
+      function startVideo() {
+        if (isVideoPlaying) return;
+
+        console.log("Starting video playback");
+        video.currentTime = 0; // Reset to beginning
+        video.muted = false;
+        video.volume = 1.0;
+
+        video.play().catch(e => {
+          console.log("Video play failed:", e);
+          // If autoplay with sound fails, try muted first then unmute
+          video.muted = true;
+          video.play().then(() => {
+            setTimeout(() => {
+              video.muted = false;
+            }, 100);
+          }).catch(err => {
+            console.log("Fallback video play also failed:", err);
+          });
+        });
+
+        isVideoPlaying = true;
+      }
+
+      function stopVideo() {
+        if (!isVideoPlaying) return;
+
+        console.log("Stopping video playback");
+        video.pause();
+        video.muted = true;
+        isVideoPlaying = false;
+      }
+
       function toggleInfo() {
         if (!currentTarget) return;
 
         isInfoShown = !isInfoShown;
 
         if (isInfoShown) {
-          video.pause();
-          video.muted = true; // Mute when showing info
+          stopVideo();
           document.querySelectorAll("a-video").forEach(v => v.setAttribute("visible", false));
           websiteLink.href = "https://www.youtube.com/";
           websiteLink.textContent = "Visit YouTube";
           websiteLink.style.display = "block";
           document.querySelector(`#${currentTarget} .target-text`).setAttribute("opacity", "1");
         } else {
-          // Unmute and play video with sound when returning to video mode
-          video.muted = false;
-          video.volume = 1.0;
-          video.play().catch(e => {
-            console.log("Video play failed:", e);
-            // If autoplay with sound fails, try muted first then unmute
-            video.muted = true;
-            video.play().then(() => {
-              video.muted = false;
-            });
-          });
-          document.querySelectorAll("a-video").forEach(v => v.setAttribute("visible", true));
+          if (currentTarget) {
+            startVideo();
+            document.querySelector(`#${currentTarget} a-video`).setAttribute("visible", true);
+          }
           websiteLink.style.display = "none";
           hideAllTexts();
         }
@@ -633,23 +657,8 @@
           currentTarget = id;
 
           if (!isInfoShown) {
-            // Reset video to beginning for fresh playback
-            video.currentTime = 0;
-            // Unmute and play video with sound
-            video.muted = false;
-            video.volume = 1.0; // Set volume to maximum
-
-            // Ensure video plays from the start
-            video.play().catch(e => {
-              console.log("Video play failed:", e);
-              // If autoplay with sound fails, try muted first then unmute
-              video.muted = true;
-              video.play().then(() => {
-                video.muted = false;
-              }).catch(err => {
-                console.log("Fallback video play also failed:", err);
-              });
-            });
+            // Start video playback
+            startVideo();
 
             // Show the corresponding a-video element
             document.querySelector(`#${id} a-video`).setAttribute("visible", true);
@@ -660,12 +669,10 @@
         });
 
         target.addEventListener("targetLost", () => {
-          console.log(`Target ${id} lost - pausing video`);
-          currentTarget = null;
+          console.log(`Target ${id} lost - stopping video`);
 
-          // Pause and mute video immediately when target is lost
-          video.pause();
-          video.muted = true;
+          // Stop video playback immediately when target is lost
+          stopVideo();
 
           // Hide all a-video elements
           document.querySelectorAll("a-video").forEach(v => v.setAttribute("visible", false));
@@ -673,17 +680,16 @@
           // Hide website link and texts
           websiteLink.style.display = "none";
           hideAllTexts();
+
+          // Clear current target
+          currentTarget = null;
         });
       });
 
       async function initializeCamera() {
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } },
-          });
-          video.srcObject = stream;
-          video.setAttribute("playsinline", true);
-          video.play();
+          // Camera initialization is handled by MindAR
+          console.log("AR camera initialized");
         } catch (err) {
           console.warn("Camera access failed:", err);
         }
