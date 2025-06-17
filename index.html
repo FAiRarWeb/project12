@@ -3,84 +3,106 @@
   <head>
     <meta charset="UTF-8" />
     <title>FAir AR</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    
+    <!-- A-Frame + MindAR -->
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
     <style>
-      /* General Styles */
-      body {
+      /* Reset & Layout */
+      body, html {
         margin: 0;
+        padding: 0;
         overflow: hidden;
-        font-family: 'Arial', sans-serif;
-        background-color: #000;
+        font-family: Arial, sans-serif;
+        background-color: black;
       }
 
-      /* Startup Screen */
       #startup-screen {
         position: absolute;
         top: 0;
         left: 0;
         width: 100vw;
         height: 100vh;
-        background-color: #000;
+        background: #000;
+        color: white;
         display: flex;
         flex-direction: column;
-        justify-content: center;
         align-items: center;
+        justify-content: center;
         z-index: 10;
-        transition: opacity 1s ease;
+        transition: opacity 1s;
+      }
+
+      .hidden {
+        opacity: 0;
+        pointer-events: none;
       }
 
       .logo-container {
-        margin-bottom: 20px;
-        text-align: center;
+        margin-bottom: 30px;
+        animation: fadeInUp 1s ease forwards;
       }
 
       .logo-text {
-        color: white;
-        font-size: 32px;
+        font-size: 36px;
         font-weight: bold;
+        text-align: center;
       }
 
       .loading-container {
+        margin-bottom: 30px;
         display: flex;
         flex-direction: column;
         align-items: center;
-        margin-bottom: 20px;
       }
 
       .loading-spinner {
-        border: 6px solid #f3f3f3;
-        border-top: 6px solid #3498db;
-        border-radius: 50%;
         width: 40px;
         height: 40px;
+        border: 4px solid white;
+        border-top: 4px solid transparent;
+        border-radius: 50%;
         animation: spin 1s linear infinite;
+        margin-bottom: 10px;
       }
 
       .checkmark-container {
         display: none;
+      }
+
+      .checkmark-container.show {
+        display: block;
         width: 40px;
         height: 40px;
-        border-radius: 50%;
-        background-color: #4CAF50;
-        justify-content: center;
-        align-items: center;
       }
 
       .checkmark {
-        width: 12px;
-        height: 24px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 4px solid #4CAF50;
+        position: relative;
+        animation: popIn 0.5s ease forwards;
+      }
+
+      .checkmark::after {
+        content: "";
+        position: absolute;
+        left: 11px;
+        top: 6px;
+        width: 10px;
+        height: 20px;
         border: solid white;
         border-width: 0 4px 4px 0;
         transform: rotate(45deg);
-        margin-bottom: 4px;
       }
 
       .loading-text {
-        color: white;
-        margin-top: 10px;
+        font-size: 16px;
+        opacity: 0.8;
+        transition: color 0.5s;
       }
 
       .loading-text.ready {
@@ -90,79 +112,73 @@
       #start-button {
         background-color: #4CAF50;
         color: white;
-        padding: 12px 24px;
+        font-size: 18px;
+        padding: 10px 20px;
         border: none;
-        border-radius: 4px;
-        font-size: 16px;
+        border-radius: 5px;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.5s, transform 0.5s;
         cursor: pointer;
-        display: none;
-        animation: fadeIn 1s ease forwards;
       }
 
       #start-button.show {
-        display: block;
-      }
-
-      .hidden {
-        opacity: 0;
-        pointer-events: none;
+        opacity: 1;
+        transform: translateY(0);
       }
 
       #toggle-button {
-        position: absolute;
+        position: fixed;
         top: 10px;
         right: 10px;
-        z-index: 10;
         padding: 10px 20px;
-        font-size: 16px;
-        background-color: #fff;
+        background-color: #4CAF50;
+        color: white;
         border: none;
         border-radius: 5px;
-        cursor: pointer;
+        z-index: 5;
       }
 
       .ar-link {
-        position: absolute;
+        display: none;
+        position: fixed;
         bottom: 20px;
         left: 50%;
         transform: translateX(-50%);
-        background-color: #007bff;
-        color: white;
         padding: 10px 20px;
+        background-color: #4CAF50;
+        color: white;
         text-decoration: none;
         border-radius: 5px;
-        z-index: 10;
-        display: none;
+        z-index: 5;
       }
 
+      /* Animations */
       @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
       }
 
-      @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
 
-      .target-text {
-        opacity: 0;
-        transition: opacity 0.5s;
-      }
-
-      .tv-frame {
-        geometry: primitive: box; width: 1.1; height: 0.6; depth: 0.05;
-        material: color: black;
-      }
-
-      .tv-stand {
-        geometry: primitive: cylinder; radius: 0.05; height: 0.1;
-        material: color: black;
-        position: 0 -0.35 0;
-      }
-
-      .video-container {
-        position: 0 0 0;
+      @keyframes popIn {
+        from {
+          transform: scale(0.5);
+          opacity: 0;
+        }
+        to {
+          transform: scale(1);
+          opacity: 1;
+        }
       }
     </style>
   </head>
@@ -185,76 +201,61 @@
       <button id="start-button" onclick="startARExperience()">Start AR</button>
     </div>
 
-    <!-- Info and Link UI -->
     <button id="toggle-button" onclick="toggleInfo()">Info</button>
-    <a href="#" class="ar-link" id="websiteLink" target="_blank">Visit Website</a>
+    <a href="https://yourwebsite.com" class="ar-link" id="websiteLink" target="_blank">Visit Website</a>
 
-    <!-- Hidden video element -->
+    <!-- Video element -->
     <video id="ar-video" src="https://fairarweb.github.io/project12/videotest.mp4" loop muted playsinline style="display: none"></video>
 
-    <!-- AR Scene -->
+    <!-- A-Frame Scene -->
     <a-scene
-      mindar-image="imageTargetSrc: https://FAiRarWeb.github.io/project12/targets.mind; uiScanning: no; filterMinCF: 0.0001; filterBeta: 0.001; missTolerance: 5; warmupTolerance: 3;"
+      mindar-image="imageTargetSrc: https://FAiRarWeb.github.io/project12/targets.mind; uiScanning: no;"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
       renderer="precision: high; antialias: true;"
-      style="display: none;"
-      id="ar-scene"
       embedded
+      id="ar-scene"
+      style="display: none"
     >
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <!-- Image Target 0 -->
       <a-entity mindar-image-target="targetIndex: 0" id="target-0">
-        <a-entity class="tv-frame" position="0 0 -0.01">
-          <a-entity class="tv-stand"></a-entity>
-        </a-entity>
-        <a-entity class="video-container" position="0 0 0">
-          <a-video
-            id="video-plane-0"
-            src="#ar-video"
-            position="0 0 0"
-            width="1"
-            height="0.45"
-            visible="false"
-            autoplay="false"
-          ></a-video>
-        </a-entity>
-        <a-text class="target-text" value="Link A" color="white" position="0 0.6 0" scale="0.5 0.5 0.5"></a-text>
+        <a-video
+          id="video-plane-0"
+          src="#ar-video"
+          position="0 0 0"
+          width="1"
+          height="0.45"
+          visible="false"
+        ></a-video>
+        <a-text class="target-text" value="Link A" color="white" position="0 0.6 0" scale="0.5 0.5 0.5" opacity="0"></a-text>
       </a-entity>
 
       <!-- Image Target 1 -->
       <a-entity mindar-image-target="targetIndex: 1" id="target-1">
-        <a-entity class="tv-frame" position="0 0 -0.01">
-          <a-entity class="tv-stand"></a-entity>
-        </a-entity>
-        <a-entity class="video-container" position="0 0 0">
-          <a-video
-            id="video-plane-1"
-            src="#ar-video"
-            position="0 0.05 0"
-            width="1"
-            height="0.45"
-            visible="false"
-            autoplay="false"
-          ></a-video>
-        </a-entity>
-        <a-text class="target-text" value="Link B" color="white" position="0 0.6 0" scale="0.5 0.5 0.5"></a-text>
+        <a-video
+          id="video-plane-1"
+          src="#ar-video"
+          position="0 0.05 0"
+          width="1"
+          height="0.45"
+          visible="false"
+        ></a-video>
+        <a-text class="target-text" value="Link B" color="white" position="0 0.6 0" scale="0.5 0.5 0.5" opacity="0"></a-text>
       </a-entity>
     </a-scene>
 
-    <!-- JavaScript Logic -->
     <script>
+      const websiteLink = document.getElementById("websiteLink");
+      const video = document.getElementById("ar-video");
       const startupScreen = document.getElementById("startup-screen");
       const startButton = document.getElementById("start-button");
       const arScene = document.getElementById("ar-scene");
-      const video = document.getElementById("ar-video");
-      const toggleButton = document.getElementById("toggle-button");
-      const websiteLink = document.getElementById("websiteLink");
-      const targetTexts = document.querySelectorAll(".target-text");
       const loadingSpinner = document.getElementById("loading-spinner");
       const checkmarkContainer = document.getElementById("checkmark-container");
       const loadingText = document.getElementById("loading-text");
+      const targetTexts = document.querySelectorAll(".target-text");
 
       let isInfoShown = false;
 
@@ -274,38 +275,36 @@
       }
 
       window.addEventListener("load", () => {
-        // Simulate loading completed
+        // Simulate loading complete after delay
         setTimeout(() => {
           loadingSpinner.classList.add("hidden");
-          checkmarkContainer.style.display = "flex";
+          checkmarkContainer.classList.add("show");
           loadingText.textContent = "Ready!";
           loadingText.classList.add("ready");
           startButton.classList.add("show");
-        }, 2000); // Simulated loading time
+        }, 2000);
       });
 
-      // Video interaction for target 0
+      // Target 0 video logic
       document.querySelector("#target-0").addEventListener("targetFound", () => {
         video.play();
-        document.querySelector("#video-plane-0").setAttribute("visible", "true");
-        websiteLink.href = "https://example.com/target0";
+        document.getElementById("video-plane-0").setAttribute("visible", "true");
       });
 
       document.querySelector("#target-0").addEventListener("targetLost", () => {
         video.pause();
-        document.querySelector("#video-plane-0").setAttribute("visible", "false");
+        document.getElementById("video-plane-0").setAttribute("visible", "false");
       });
 
-      // Video interaction for target 1
+      // Target 1 video logic
       document.querySelector("#target-1").addEventListener("targetFound", () => {
         video.play();
-        document.querySelector("#video-plane-1").setAttribute("visible", "true");
-        websiteLink.href = "https://example.com/target1";
+        document.getElementById("video-plane-1").setAttribute("visible", "true");
       });
 
       document.querySelector("#target-1").addEventListener("targetLost", () => {
         video.pause();
-        document.querySelector("#video-plane-1").setAttribute("visible", "false");
+        document.getElementById("video-plane-1").setAttribute("visible", "false");
       });
     </script>
   </body>
