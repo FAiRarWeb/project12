@@ -595,10 +595,10 @@
       }
 
       function startVideo() {
-        if (isVideoPlaying) return;
+        console.log("Starting video playback from beginning");
 
-        console.log("Starting video playback");
-        video.currentTime = 0; // Reset to beginning
+        // Always reset to beginning, even if already playing
+        video.currentTime = 0;
         video.muted = false;
         video.volume = 1.0;
 
@@ -621,8 +621,9 @@
       function stopVideo() {
         if (!isVideoPlaying) return;
 
-        console.log("Stopping video playback");
+        console.log("Stopping video playback and resetting to beginning");
         video.pause();
+        video.currentTime = 0; // Reset to beginning when stopping
         video.muted = true;
         isVideoPlaying = false;
       }
@@ -653,11 +654,11 @@
       allTargets.forEach(id => {
         const target = document.getElementById(id);
         target.addEventListener("targetFound", () => {
-          console.log(`Target ${id} found - starting video playback`);
+          console.log(`Target ${id} found - starting video from beginning`);
           currentTarget = id;
 
           if (!isInfoShown) {
-            // Start video playback
+            // Always start video from beginning, regardless of previous state
             startVideo();
 
             // Show the corresponding a-video element
