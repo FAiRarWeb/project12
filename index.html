@@ -438,10 +438,11 @@
 
     <video
       id="ar-video"
-      src="https://fairarweb.github.io/project12/videotest.mp4"
+      src="https://fairarweb.github.io/project12/videoAR.mp4"
+      loop
+      autoplay
       muted
       playsinline
-      preload="auto"
       style="display: none"
     ></video>
 
@@ -467,18 +468,18 @@
         </a-entity>
         <a-entity class="video-container" position="0 0 0">
           <a-video
-            id="video-plane-0"
-            src="#ar-video"
+            id="video-plane"
+            src="https://fairarweb.github.io/project12/videoAR.mp4"
             position="0 0 0"
             width="1"
             height="0.45"
             scale="1 1 1"
-            visible="false"
+            visible="true"
           ></a-video>
         </a-entity>
         <a-text
           class="target-text"
-          value="Link A"
+          value=""
           color="white"
           position="0 0.6 0"
           scale="0.5 0.5 0.5"
@@ -492,18 +493,17 @@
         </a-entity>
         <a-entity class="video-container" position="0 0 0">
           <a-video
-            id="video-plane-1"
-            src="#ar-video"
-            position="0 0.05 0"
+            src="https://fairarweb.github.io/project12/videoAR.mp4"
+            position="0 0.01 0"
             width="1"
             height="0.45"
             scale="1 1 1"
-            visible="false"
+            visible="true"
           ></a-video>
         </a-entity>
         <a-text
           class="target-text"
-          value="Link A"
+          value=""
           color="white"
           position="0 0.6 0"
           scale="0.5 0.5 0.5"
@@ -515,6 +515,7 @@
       let isInfoShown = false;
       const websiteLink = document.getElementById("websiteLink");
       const video = document.getElementById("ar-video");
+      const videoPlane = document.getElementById("video-plane");
       const targetTexts = document.querySelectorAll(".target-text");
       const startupScreen = document.getElementById("startup-screen");
       const startButton = document.getElementById("start-button");
@@ -526,7 +527,6 @@
       let currentTarget = null;
       let isARStarted = false;
       let isARReady = false;
-      let isVideoPlaying = false;
 
       // Startup screen functionality
       function checkARReady() {
@@ -593,58 +593,21 @@
         });
       }
 
-      function startVideo() {
-        if (isVideoPlaying) return;
-
-        console.log(`Resuming video playback from position: ${video.currentTime.toFixed(2)}s`);
-
-        // Don't reset currentTime - continue from where it was paused
-        video.muted = false;
-        video.volume = 1.0;
-
-        video.play().catch(e => {
-          console.log("Video play failed:", e);
-          // If autoplay with sound fails, try muted first then unmute
-          video.muted = true;
-          video.play().then(() => {
-            setTimeout(() => {
-              video.muted = false;
-            }, 100);
-          }).catch(err => {
-            console.log("Fallback video play also failed:", err);
-          });
-        });
-
-        isVideoPlaying = true;
-      }
-
-      function stopVideo() {
-        if (!isVideoPlaying) return;
-
-        console.log(`Pausing video playback at position: ${video.currentTime.toFixed(2)}s`);
-        video.pause();
-        // Don't reset currentTime - keep current position for resume
-        video.muted = true;
-        isVideoPlaying = false;
-      }
-
       function toggleInfo() {
         if (!currentTarget) return;
 
         isInfoShown = !isInfoShown;
 
         if (isInfoShown) {
-          stopVideo();
+          video.pause();
           document.querySelectorAll("a-video").forEach(v => v.setAttribute("visible", false));
           websiteLink.href = "https://www.youtube.com/";
           websiteLink.textContent = "Visit YouTube";
           websiteLink.style.display = "block";
           document.querySelector(`#${currentTarget} .target-text`).setAttribute("opacity", "1");
         } else {
-          if (currentTarget) {
-            startVideo();
-            document.querySelector(`#${currentTarget} a-video`).setAttribute("visible", true);
-          }
+          video.play();
+          document.querySelectorAll("a-video").forEach(v => v.setAttribute("visible", true));
           websiteLink.style.display = "none";
           hideAllTexts();
         }
@@ -654,15 +617,9 @@
       allTargets.forEach(id => {
         const target = document.getElementById(id);
         target.addEventListener("targetFound", () => {
-          console.log(`Target ${id} found - resuming video playback`);
           currentTarget = id;
-
           if (!isInfoShown) {
-            // Resume video from current position
-            startVideo();
-
-            // Show the corresponding a-video element
-            document.querySelector(`#${id} a-video`).setAttribute("visible", true);
+            video.play();
             document.querySelector(`#${id} .target-text`).setAttribute("opacity", "0");
           } else {
             document.querySelector(`#${id} .target-text`).setAttribute("opacity", "1");
@@ -670,27 +627,21 @@
         });
 
         target.addEventListener("targetLost", () => {
-          console.log(`Target ${id} lost - stopping video`);
-
-          // Stop video playback immediately when target is lost
-          stopVideo();
-
-          // Hide all a-video elements
-          document.querySelectorAll("a-video").forEach(v => v.setAttribute("visible", false));
-
-          // Hide website link and texts
+          currentTarget = null;
+          video.pause();
           websiteLink.style.display = "none";
           hideAllTexts();
-
-          // Clear current target
-          currentTarget = null;
         });
       });
 
       async function initializeCamera() {
         try {
-          // Camera initialization is handled by MindAR
-          console.log("AR camera initialized");
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } },
+          });
+          video.srcObject = stream;
+          video.setAttribute("playsinline", true);
+          video.play();
         } catch (err) {
           console.warn("Camera access failed:", err);
         }
