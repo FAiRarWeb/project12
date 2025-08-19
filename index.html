@@ -125,7 +125,8 @@
       .google-button {
         background: transparent;
         color: white;
-        border: none;
+        border: 3px solid #4CAF50;
+        border-radius: 10px;
         width: 150px;
         height: 150px;
         display: none;
@@ -133,6 +134,9 @@
         font-weight: bold;
         overflow: hidden;
         padding: 0;
+        position: fixed;
+        top: 20px;
+        left: 20px;
       }
 
       .google-button img {
@@ -142,8 +146,9 @@
       }
 
       .google-button:hover {
-        transform: translate(-50%, -50%) scale(1.15);
+        transform: scale(1.15);
         box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        border-color: #66BB6A;
       }
     </style>
   </head>
@@ -168,11 +173,17 @@
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0" videohandler>
-        <a-video src="#video1" position="0 0 0.01" width="1" height="0.45" autoplay="false" loop="true" visible="false"></a-video>
+        <a-video src="#video1" position="0 0 0.01" width="1" height="0.45" autoplay="false" loop="true" visible="false" 
+                 material="shader: flat; transparent: true; opacity: 0.9"
+                 geometry="primitive: plane; width: 1; height: 0.45"
+                 style="border: 2px solid #4CAF50;"></a-video>
       </a-entity>
 
       <a-entity mindar-image-target="targetIndex: 1" videohandler>
-        <a-video src="#video1" position="0 0 0.01" width="1" height="0.45" autoplay="false" loop="true" visible="false"></a-video>
+        <a-video src="#video1" position="0 0 0.01" width="1" height="0.45" autoplay="false" loop="true" visible="false"
+                 material="shader: flat; transparent: true; opacity: 0.9"
+                 geometry="primitive: plane; width: 1; height: 0.45"
+                 style="border: 2px solid #4CAF50;"></a-video>
       </a-entity>
     </a-scene>
 
@@ -301,6 +312,9 @@
     </script>
   </body>
 </html>
+
+
+
 
 
 
