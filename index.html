@@ -43,6 +43,20 @@
           padding: 20px;
           box-sizing: border-box;
         }
+        
+        a-scene {
+          display: none !important;
+        }
+        
+        .control-button, .google-button {
+          display: none !important;
+        }
+      }
+
+      @media screen and (orientation: landscape) {
+        a-scene {
+          display: block !important;
+        }
       }
 
       a-scene {
@@ -169,6 +183,33 @@
     </button>
 
     <script>
+      // Force landscape orientation and disable AR in portrait
+      let isLandscape = window.innerWidth > window.innerHeight;
+
+      function checkOrientation() {
+        const newIsLandscape = window.innerWidth > window.innerHeight;
+        if (newIsLandscape !== isLandscape) {
+          isLandscape = newIsLandscape;
+          if (!isLandscape) {
+            // Hide all AR elements when switching to portrait
+            document.querySelectorAll("a-video").forEach(p => p.setAttribute("visible", false));
+            document.querySelector("#video1").pause();
+            document.querySelector("#animateButton").style.display = "none";
+            document.querySelector("#infoButton").style.display = "none";
+            document.querySelector("#googleButton").style.display = "none";
+          }
+        }
+      }
+
+      window.addEventListener('orientationchange', checkOrientation);
+      window.addEventListener('resize', checkOrientation);
+
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(err => {
+          console.log('Orientation lock not supported:', err);
+        });
+      }
+
       window.targetStates = {};
       window.isAnimatePressed = false;
       window.currentVideoPlane = null;
@@ -260,6 +301,8 @@
     </script>
   </body>
 </html>
+
+
 
 
 
