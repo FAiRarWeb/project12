@@ -1,235 +1,308 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>MindAR AR Responsive</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <head>
+    <meta charset="UTF-8" />
+    <title>MindAR AR Responsive</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, orientation=landscape" />
+    <meta name="screen-orientation" content="landscape">
+    <meta name="mobile-web-app-capable" content="yes">
 
-  <!-- Libraries -->
-  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.0.0/dist/aframe-extras.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    <!-- Libraries -->
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.0.0/dist/aframe-extras.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
-  <!-- Styles -->
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: black;
-      position: fixed;
-      top: 0;
-      left: 0;
-    }
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: black;
+        position: fixed;
+        top: 0;
+        left: 0;
+      }
 
-    a-scene {
-      width: 100% !important;
-      height: 100% !important;
-      position: fixed !important;
-      top: 0;
-      left: 0;
-    }
+      a-scene {
+        width: 100% !important;
+        height: 100% !important;
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        margin: 0;
+        padding: 0;
+      }
 
-    .a-enter-vr { display: none !important; }
+      .a-enter-vr {
+        display: none !important;
+      }
 
-    .control-button, .google-button {
-      position: absolute;
-      z-index: 20;
-      cursor: pointer;
-      transform-origin: center;
-      transition: all 0.3s ease;
-      display: none;
-    }
+      .control-button, .google-button {
+        position: absolute;
+        z-index: 20;
+        font-weight: bold;
+        cursor: pointer;
+        transform-origin: center;
+        transition: all 0.3s ease;
+      }
 
-    .control-button {
-      background-color: rgba(76, 175, 80, 0.8);
-      border-radius: 8px;
-      padding: 10px 15px;
-      border: none;
-      font-size: 16px;
-      color: white;
-      font-weight: bold;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    }
+      .control-button {
+        background-color: rgba(76, 175, 80, 0.8);
+        border-radius: 8px;
+        padding: 10px 15px;
+        display: none;
+        border: none;
+        font-size: 16px;
+        color: white;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-align: center;
+        white-space: nowrap;
+      }
 
-    .control-button:hover {
-      background-color: rgba(76, 175, 80, 1);
-      transform: scale(1.1) translateY(-2px);
-      box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-    }
-    .control-button:active { transform: scale(0.95); }
-    .control-button.pressed { background-color: #2E7D32; }
+      .animate-button {
+        bottom: 20px;
+        right: 20px;
+      }
 
-    .animate-button { bottom: 20px; right: 20px; }
-    .info-button { bottom: 80px; right: 20px; }
+      .info-button {
+        bottom: 80px;
+        right: 20px;
+      }
 
-    .google-button {
-      background: transparent;
-      border: none;
-      width: 150px;
-      height: 150px;
-      overflow: hidden;
-      padding: 0;
-    }
-    .google-button img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
-    .google-button:hover {
-      transform: scale(1.15);
-      box-shadow: 0 6px 12px rgba(0,0,0,0.4);
-    }
-  </style>
-</head>
+      .control-button:hover {
+        background-color: rgba(76, 175, 80, 1);
+        transform: scale(1.1) translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+      }
 
-<body>
-  <a-scene
-    mindar-image="imageTargetSrc: https://FAiRarWeb.github.io/project123/targets.mind;
-                  uiScanning: true;
-                  filterMinCF: 0.0005;
-                  filterBeta: 0.01;
-                  missTolerance: 3;
-                  warmupTolerance: 2;"
-    vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: false"
-    renderer="precision: high; antialias: true"
-    embedded
-  >
-    <a-assets>
-      <video id="video1" src="https://FAiRarWeb.github.io/project/videoAR3.mp4" preload="auto" loop crossorigin="anonymous"></video>
-    </a-assets>
+      .control-button:active {
+        transform: scale(0.95);
+      }
 
-    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+      .control-button.pressed {
+        background-color: #2E7D32;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
 
-    <!-- Targets -->
-    <a-entity mindar-image-target="targetIndex: 0" videohandler>
-      <a-video src="#video1" position="0 0 0.01" width="1" height="0.45" autoplay="false" loop="true" visible="false"></a-video>
-    </a-entity>
-    <a-entity mindar-image-target="targetIndex: 1" videohandler>
-      <a-video src="#video1" position="0 0 0.01" width="1" height="0.45" autoplay="false" loop="true" visible="false"></a-video>
-    </a-entity>
-  </a-scene>
+      .google-button {
+        background: transparent;
+        color: white;
+        border: none;
+        width: 150px;
+        height: 150px;
+        display: none;
+        font-size: 20px;
+        font-weight: bold;
+        overflow: hidden;
+        padding: 0;
+      }
 
-  <!-- UI Buttons -->
-  <button id="animateButton" class="control-button animate-button">Animate Me</button>
-  <button id="infoButton" class="control-button info-button">Info</button>
-  <button id="googleButton" class="google-button" onclick="window.open('https://creativeculture.my/fair/', '_blank')">
-    <img src="https://FAiRarWeb.github.io/project/buaya2.png" alt="Info" />
-  </button>
+      .google-button img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
 
-  <!-- Script -->
-  <script>
-    window.targetStates = {};
-    window.isAnimatePressed = false;
-    window.currentVideoPlane = null;
+      .google-button:hover {
+        transform: translate(-50%, -50%) scale(1.15);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+      }
 
-    AFRAME.registerComponent("videohandler", {
-      init: function () {
-        const videoEl = document.querySelector("#video1");
-        const animateButton = document.querySelector("#animateButton");
-        const infoButton = document.querySelector("#infoButton");
-        const googleButton = document.querySelector("#googleButton");
-        const thisVideoPlane = this.el.querySelector("a-video");
-        const targetIndex = this.el.getAttribute("mindar-image-target").targetIndex;
-
-        window.targetStates[targetIndex] = false;
-
-        // --- update layout based on orientation ---
-        function updateOrientation() {
-          if (window.matchMedia("(orientation: landscape)").matches) {
-            animateButton.style.bottom = "20px"; animateButton.style.right = "20px";
-            infoButton.style.bottom = "20px"; infoButton.style.right = "120px";
-            googleButton.style.top = "20px"; googleButton.style.right = "20px";
-          } else {
-            animateButton.style.bottom = "20px"; animateButton.style.right = "20px";
-            infoButton.style.bottom = "80px"; infoButton.style.right = "20px";
-            googleButton.style.top = ""; googleButton.style.right = "";
-          }
+      /* Hide AR scene in portrait mode */
+      @media screen and (orientation: portrait) {
+        a-scene {
+          display: none !important;
         }
-        window.addEventListener("orientationchange", updateOrientation);
-        window.addEventListener("resize", updateOrientation);
+        
+        .control-button, .google-button {
+          display: none !important;
+        }
+      }
 
-        if (!window.videoHandlerInitialized) {
-          window.videoHandlerInitialized = true;
+      /* Portrait warning overlay */
+      .portrait-warning {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: black;
+        color: white;
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        font-size: 24px;
+        text-align: center;
+      }
 
-          const checkAndPlayVideo = () => {
-            const anyTargetFound = Object.values(window.targetStates).some(s => s);
-            if (window.isAnimatePressed && anyTargetFound && window.currentVideoPlane) {
-              window.currentVideoPlane.setAttribute("visible", true);
+      @media screen and (orientation: portrait) {
+        .portrait-warning {
+          display: flex !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <a-scene
+      mindar-image="imageTargetSrc: https://FAiRarWeb.github.io/project123/targets.mind;
+                    uiScanning: true;
+                    filterMinCF: 0.0005;
+                    filterBeta: 0.01;
+                    missTolerance: 3;
+                    warmupTolerance: 2;"
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: false"
+      renderer="precision: high; antialias: true"
+      embedded
+    >
+      <a-assets>
+        <video id="video1" src="https://FAiRarWeb.github.io/project/videoAR3.mp4" preload="auto" loop crossorigin="anonymous"></video>
+      </a-assets>
+
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <a-entity mindar-image-target="targetIndex: 0" videohandler>
+        <a-video src="#video1" position="0 0 0.01" width="1" height="0.45" autoplay="false" loop="true" visible="false"></a-video>
+      </a-entity>
+
+      <a-entity mindar-image-target="targetIndex: 1" videohandler>
+        <a-video src="#video1" position="0 0 0.01" width="1" height="0.45" autoplay="false" loop="true" visible="false"></a-video>
+      </a-entity>
+    </a-scene>
+
+    <button id="animateButton" class="control-button animate-button">Animate Me</button>
+    <button id="infoButton" class="control-button info-button">Info</button>
+    <button id="googleButton" class="google-button" onclick="window.open('https://creativeculture.my/fair/', '_blank')">
+      <img src="https://FAiRarWeb.github.io/project/buaya2.png" alt="Info" />
+    </button>
+
+    <script>
+      window.targetStates = {};
+      window.isAnimatePressed = false;
+      window.currentVideoPlane = null;
+
+      AFRAME.registerComponent("videohandler", {
+        init: function () {
+          const videoEl = document.querySelector("#video1");
+          const animateButton = document.querySelector("#animateButton");
+          const infoButton = document.querySelector("#infoButton");
+          const googleButton = document.querySelector("#googleButton");
+          const thisVideoPlane = this.el.querySelector("a-video");
+          const targetIndex = this.el.getAttribute("mindar-image-target").targetIndex;
+
+          window.targetStates[targetIndex] = false;
+
+          if (!window.videoHandlerInitialized) {
+            window.videoHandlerInitialized = true;
+
+            const checkAndPlayVideo = () => {
+              const anyTargetFound = Object.values(window.targetStates).some(state => state);
+              if (window.isAnimatePressed && anyTargetFound && window.currentVideoPlane) {
+                window.currentVideoPlane.setAttribute("visible", true);
+                videoEl.play().catch(e => console.warn("Autoplay blocked:", e));
+              } else {
+                document.querySelectorAll("a-video").forEach(p => p.setAttribute("visible", false));
+                videoEl.pause();
+              }
+            };
+
+            animateButton.addEventListener("click", () => {
+              window.isAnimatePressed = !window.isAnimatePressed;
+              googleButton.style.display = "none";
+              animateButton.classList.toggle("pressed", window.isAnimatePressed);
+              checkAndPlayVideo();
+            });
+
+            infoButton.addEventListener("click", () => {
+              const isHidden = googleButton.style.display !== "block";
+              infoButton.classList.toggle("pressed", isHidden);
+              googleButton.style.display = isHidden ? "block" : "none";
+
+              if (isHidden) {
+                document.querySelectorAll("a-video").forEach(p => p.setAttribute("visible", false));
+                videoEl.pause();
+                window.isAnimatePressed = false;
+                animateButton.classList.remove("pressed");
+              }
+            });
+          }
+
+          this.el.addEventListener("targetFound", () => {
+            window.targetStates[targetIndex] = true;
+            window.currentVideoPlane = thisVideoPlane;
+            animateButton.style.display = "block";
+            infoButton.style.display = "block";
+            if (window.isAnimatePressed) {
+              thisVideoPlane.setAttribute("visible", true);
               videoEl.play().catch(e => console.warn("Autoplay blocked:", e));
-            } else {
-              document.querySelectorAll("a-video").forEach(p => p.setAttribute("visible", false));
-              videoEl.pause();
             }
-          };
-
-          animateButton.addEventListener("click", () => {
-            window.isAnimatePressed = !window.isAnimatePressed;
-            googleButton.style.display = "none";
-            animateButton.classList.toggle("pressed", window.isAnimatePressed);
-            checkAndPlayVideo();
           });
 
-          infoButton.addEventListener("click", () => {
-            const isHidden = googleButton.style.display !== "block";
-            infoButton.classList.toggle("pressed", isHidden);
-            googleButton.style.display = isHidden ? "block" : "none";
-
-            if (isHidden) {
-              document.querySelectorAll("a-video").forEach(p => p.setAttribute("visible", false));
+          this.el.addEventListener("targetLost", () => {
+            window.targetStates[targetIndex] = false;
+            thisVideoPlane.setAttribute("visible", false);
+            const anyFound = Object.values(window.targetStates).some(s => s);
+            if (!anyFound) {
+              window.currentVideoPlane = null;
               videoEl.pause();
+              animateButton.style.display = "none";
+              infoButton.style.display = "none";
+              googleButton.style.display = "none";
               window.isAnimatePressed = false;
               animateButton.classList.remove("pressed");
-            }
-          });
-        }
-
-        this.el.addEventListener("targetFound", () => {
-          window.targetStates[targetIndex] = true;
-          window.currentVideoPlane = thisVideoPlane;
-
-          animateButton.style.display = "block";
-          infoButton.style.display = "block";
-          updateOrientation();
-
-          if (window.isAnimatePressed) {
-            thisVideoPlane.setAttribute("visible", true);
-            videoEl.play().catch(e => console.warn("Autoplay blocked:", e));
-          }
-        });
-
-        this.el.addEventListener("targetLost", () => {
-          window.targetStates[targetIndex] = false;
-          thisVideoPlane.setAttribute("visible", false);
-
-          if (!Object.values(window.targetStates).some(s => s)) {
-            window.currentVideoPlane = null;
-            videoEl.pause();
-            animateButton.style.display = "none";
-            infoButton.style.display = "none";
-            googleButton.style.display = "none";
-            window.isAnimatePressed = false;
-            animateButton.classList.remove("pressed");
-            infoButton.classList.remove("pressed");
-          } else {
-            for (let i in window.targetStates) {
-              if (window.targetStates[i]) {
-                const activeTarget = document.querySelector(`[mindar-image-target="targetIndex: ${i}"]`);
-                if (activeTarget) {
-                  window.currentVideoPlane = activeTarget.querySelector("a-video");
-                  break;
+              infoButton.classList.remove("pressed");
+            } else {
+              for (let i in window.targetStates) {
+                if (window.targetStates[i]) {
+                  const activeTarget = document.querySelector(`[mindar-image-target="targetIndex: ${i}"]`);
+                  if (activeTarget) {
+                    window.currentVideoPlane = activeTarget.querySelector("a-video");
+                    break;
+                  }
                 }
               }
             }
+          });
+        }
+      });
+
+      // Add orientation lock functionality
+      window.addEventListener('load', () => {
+        if (screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock('landscape').catch(err => {
+            console.log('Orientation lock not supported:', err);
+          });
+        }
+      });
+
+      // Disable AR functionality in portrait mode
+      window.addEventListener('orientationchange', () => {
+        setTimeout(() => {
+          if (window.orientation === 0 || window.orientation === 180) {
+            // Portrait mode - stop AR
+            const videoEl = document.querySelector("#video1");
+            if (videoEl) videoEl.pause();
+            document.querySelectorAll("a-video").forEach(p => p.setAttribute("visible", false));
           }
-        });
-      }
-    });
-  </script>
-</body>
+        }, 100);
+      });
+    </script>
+  </body>
 </html>
+
+<div class="portrait-warning">
+  <div>📱</div>
+  <div>Please rotate your device to landscape mode</div>
+  <div>AR only works in landscape orientation</div>
+</div>
+
+
+
+
