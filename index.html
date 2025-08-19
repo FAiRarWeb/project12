@@ -63,6 +63,20 @@
         white-space: nowrap;
       }
 
+      /* Show buttons in landscape when targets are found */
+      @media screen and (orientation: landscape) {
+        .control-button.show {
+          display: block !important;
+        }
+      }
+
+      /* Hide buttons in portrait mode */
+      @media screen and (orientation: portrait) {
+        .control-button {
+          display: none !important;
+        }
+      }
+
       .animate-button {
         bottom: 20px;
         right: 20px;
@@ -153,13 +167,14 @@
     <a-scene
       mindar-image="imageTargetSrc: https://FAiRarWeb.github.io/project123/targets.mind;
                     uiScanning: true;
-                    filterMinCF: 0.0005;
-                    filterBeta: 0.01;
-                    missTolerance: 3;
-                    warmupTolerance: 2;"
+                    filterMinCF: 0.0001;
+                    filterBeta: 0.005;
+                    missTolerance: 5;
+                    warmupTolerance: 5;
+                    maxTrack: 2;"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
-      renderer="precision: high; antialias: true"
+      renderer="precision: high; antialias: true; powerPreference: high-performance"
       embedded
     >
       <a-assets>
@@ -169,11 +184,11 @@
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0" videohandler>
-        <a-video src="#video1" position="0 0 0.01" width="1" height="0.45" autoplay="false" loop="true" visible="false"></a-video>
+        <a-video src="#video1" position="0 0 0.01" width="1" height="0.45" autoplay="false" loop="true" visible="false" material="shader: flat"></a-video>
       </a-entity>
 
       <a-entity mindar-image-target="targetIndex: 1" videohandler>
-        <a-video src="#video1" position="0 0 0.01" width="1" height="0.45" autoplay="false" loop="true" visible="false"></a-video>
+        <a-video src="#video1" position="0 0 0.01" width="1" height="0.45" autoplay="false" loop="true" visible="false" material="shader: flat"></a-video>
       </a-entity>
     </a-scene>
 
@@ -238,7 +253,9 @@
             window.targetStates[targetIndex] = true;
             window.currentVideoPlane = thisVideoPlane;
             animateButton.style.display = "block";
+            animateButton.classList.add("show");
             infoButton.style.display = "block";
+            infoButton.classList.add("show");
             if (window.isAnimatePressed) {
               thisVideoPlane.setAttribute("visible", true);
               videoEl.play().catch(e => console.warn("Autoplay blocked:", e));
@@ -302,6 +319,10 @@
   <div>Please rotate your device to landscape mode</div>
   <div>AR only works in landscape orientation</div>
 </div>
+
+
+
+
 
 
 
