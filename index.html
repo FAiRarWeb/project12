@@ -3,9 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <title>MindAR AR Responsive</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, orientation=landscape" />
-    <meta name="screen-orientation" content="landscape">
-    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 
     <!-- Libraries -->
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
@@ -23,6 +21,36 @@
         position: fixed;
         top: 0;
         left: 0;
+      }
+
+      /* Force landscape orientation */
+      @media screen and (orientation: portrait) {
+        body::before {
+          content: "Please rotate your device to landscape mode";
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.9);
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 24px;
+          text-align: center;
+          z-index: 9999;
+          padding: 20px;
+          box-sizing: border-box;
+        }
+        
+        a-scene {
+          display: none !important;
+        }
+        
+        .control-button, .google-button {
+          display: none !important;
+        }
       }
 
       a-scene {
@@ -61,20 +89,6 @@
         letter-spacing: 1px;
         text-align: center;
         white-space: nowrap;
-      }
-
-      /* Show buttons in landscape when targets are found */
-      @media screen and (orientation: landscape) {
-        .control-button.show {
-          display: block !important;
-        }
-      }
-
-      /* Hide buttons in portrait mode */
-      @media screen and (orientation: portrait) {
-        .control-button {
-          display: none !important;
-        }
       }
 
       .animate-button {
@@ -125,41 +139,6 @@
         transform: translate(-50%, -50%) scale(1.15);
         box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
       }
-
-      /* Hide AR scene in portrait mode */
-      @media screen and (orientation: portrait) {
-        a-scene {
-          display: none !important;
-        }
-        
-        .control-button, .google-button {
-          display: none !important;
-        }
-      }
-
-      /* Portrait warning overlay */
-      .portrait-warning {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: black;
-        color: white;
-        display: none;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-        font-size: 24px;
-        text-align: center;
-      }
-
-      @media screen and (orientation: portrait) {
-        .portrait-warning {
-          display: flex !important;
-        }
-      }
     </style>
   </head>
 
@@ -167,14 +146,13 @@
     <a-scene
       mindar-image="imageTargetSrc: https://FAiRarWeb.github.io/project123/targets.mind;
                     uiScanning: true;
-                    filterMinCF: 0.0001;
-                    filterBeta: 0.005;
-                    missTolerance: 5;
-                    warmupTolerance: 5;
-                    maxTrack: 2;"
+                    filterMinCF: 0.0005;
+                    filterBeta: 0.01;
+                    missTolerance: 3;
+                    warmupTolerance: 2;"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
-      renderer="precision: high; antialias: true; powerPreference: high-performance"
+      renderer="precision: high; antialias: true"
       embedded
     >
       <a-assets>
@@ -184,11 +162,11 @@
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0" videohandler>
-        <a-video src="#video1" position="0 0 0.01" width="1" height="0.45" autoplay="false" loop="true" visible="false" material="shader: flat"></a-video>
+        <a-video src="#video1" position="0 0 0.01" width="1" height="0.45" autoplay="false" loop="true" visible="false"></a-video>
       </a-entity>
 
       <a-entity mindar-image-target="targetIndex: 1" videohandler>
-        <a-video src="#video1" position="0 0 0.01" width="1" height="0.45" autoplay="false" loop="true" visible="false" material="shader: flat"></a-video>
+        <a-video src="#video1" position="0 0 0.01" width="1" height="0.45" autoplay="false" loop="true" visible="false"></a-video>
       </a-entity>
     </a-scene>
 
@@ -253,9 +231,7 @@
             window.targetStates[targetIndex] = true;
             window.currentVideoPlane = thisVideoPlane;
             animateButton.style.display = "block";
-            animateButton.classList.add("show");
             infoButton.style.display = "block";
-            infoButton.classList.add("show");
             if (window.isAnimatePressed) {
               thisVideoPlane.setAttribute("visible", true);
               videoEl.play().catch(e => console.warn("Autoplay blocked:", e));
@@ -289,41 +265,7 @@
           });
         }
       });
-
-      // Add orientation lock functionality
-      window.addEventListener('load', () => {
-        if (screen.orientation && screen.orientation.lock) {
-          screen.orientation.lock('landscape').catch(err => {
-            console.log('Orientation lock not supported:', err);
-          });
-        }
-      });
-
-      // Disable AR functionality in portrait mode
-      window.addEventListener('orientationchange', () => {
-        setTimeout(() => {
-          if (window.orientation === 0 || window.orientation === 180) {
-            // Portrait mode - stop AR
-            const videoEl = document.querySelector("#video1");
-            if (videoEl) videoEl.pause();
-            document.querySelectorAll("a-video").forEach(p => p.setAttribute("visible", false));
-          }
-        }, 100);
-      });
     </script>
   </body>
 </html>
-
-<div class="portrait-warning">
-  <div>📱</div>
-  <div>Please rotate your device to landscape mode</div>
-  <div>AR only works in landscape orientation</div>
-</div>
-
-
-
-
-
-
-
 
