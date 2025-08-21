@@ -200,10 +200,11 @@
     <a-scene
       mindar-image="imageTargetSrc: https://FAiRarWeb.github.io/project123/targets.mind;
                     uiScanning: true;
-                    filterMinCF: 0.0005;
-                    filterBeta: 0.01;
-                    missTolerance: 3;
-                    warmupTolerance: 2;"
+                    filterMinCF: 0.001;
+                    filterBeta: 0.1;
+                    missTolerance: 5;
+                    warmupTolerance: 1;
+                    maxTrack: 2;"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
       renderer="precision: high; antialias: true"
@@ -353,4 +354,3 @@
     </script>
   </body>
 </html>
-
