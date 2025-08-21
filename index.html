@@ -200,13 +200,14 @@
     <a-scene
       mindar-image="imageTargetSrc: https://FAiRarWeb.github.io/project123/targets.mind;
                     uiScanning: true;
-                    filterMinCF: 0.0005;
-                    filterBeta: 0.01;
-                    missTolerance: 3;
-                    warmupTolerance: 2;"
+                    filterMinCF: 0.001;
+                    filterBeta: 0.005;
+                    missTolerance: 1;
+                    warmupTolerance: 1;
+                    maxTrack: 2;"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
-      renderer="precision: high; antialias: true"
+      renderer="precision: high; antialias: true; colorManagement: true"
       embedded
     >
       <a-assets>
@@ -277,6 +278,47 @@
 
           window.targetStates[targetIndex] = false;
 
+          // Get border dimensions (50% width, 71% height of viewport)
+          const getBorderBounds = () => {
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            return {
+              left: vw * 0.25,
+              right: vw * 0.75,
+              top: vh * 0.145,
+              bottom: vh * 0.855,
+              width: vw * 0.5,
+              height: vh * 0.71
+            };
+          };
+
+          // Check if target is within red border
+          const isTargetInBorder = (targetData) => {
+            if (!targetData || !targetData.detail) return false;
+            
+            const bounds = getBorderBounds();
+            const target = targetData.detail.target;
+            
+            if (!target || !target.corners) return false;
+            
+            // Calculate target center from corners
+            const corners = target.corners;
+            let centerX = 0, centerY = 0;
+            for (let i = 0; i < corners.length; i += 2) {
+              centerX += corners[i];
+              centerY += corners[i + 1];
+            }
+            centerX /= 4;
+            centerY /= 4;
+            
+            // Convert normalized coordinates to screen coordinates
+            const screenX = centerX * window.innerWidth;
+            const screenY = centerY * window.innerHeight;
+            
+            return screenX >= bounds.left && screenX <= bounds.right && 
+                   screenY >= bounds.top && screenY <= bounds.bottom;
+          };
+
           if (!window.videoHandlerInitialized) {
             window.videoHandlerInitialized = true;
 
@@ -312,14 +354,16 @@
             });
           }
 
-          this.el.addEventListener("targetFound", () => {
-            window.targetStates[targetIndex] = true;
-            window.currentVideoPlane = thisVideoPlane;
-            animateButton.style.display = "block";
-            infoButton.style.display = "block";
-            if (window.isAnimatePressed) {
-              thisVideoPlane.setAttribute("visible", true);
-              videoEl.play().catch(e => console.warn("Autoplay blocked:", e));
+          this.el.addEventListener("targetFound", (event) => {
+            if (isTargetInBorder(event)) {
+              window.targetStates[targetIndex] = true;
+              window.currentVideoPlane = thisVideoPlane;
+              animateButton.style.display = "block";
+              infoButton.style.display = "block";
+              if (window.isAnimatePressed) {
+                thisVideoPlane.setAttribute("visible", true);
+                videoEl.play().catch(e => console.warn("Autoplay blocked:", e));
+              }
             }
           });
 
@@ -353,24 +397,6 @@
     </script>
   </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
